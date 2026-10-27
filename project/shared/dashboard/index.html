@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Vantra Ops Agent – Tool-Calls</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; background: #f6f7f9; color: #1c2430; }
+  h1 { font-size: 1.3rem; }
+  #summary { display: flex; gap: 1rem; margin-bottom: 1rem; }
+  .card { background: #fff; border-radius: 8px; padding: .6rem 1rem; box-shadow: 0 1px 3px #0002; }
+  #alert { display: none; background: #c62828; color: #fff; padding: .8rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
+  table { border-collapse: collapse; width: 100%; background: #fff; border-radius: 8px; overflow: hidden; }
+  th, td { text-align: left; padding: .4rem .7rem; border-bottom: 1px solid #e5e8ec; font-size: .9rem; }
+  .ok { color: #2e7d32; } .denied { color: #c62828; font-weight: 600; } .error, .conflict { color: #ef6c00; }
+  .empty { color: #667; padding: 1rem; }
+</style>
+</head>
+<body>
+<h1>Vantra Ops Agent – Tool-Call-Zeitleiste</h1>
+<div id="alert"></div>
+<div id="summary"></div>
+<table>
+  <thead><tr><th>Zeit (UTC)</th><th>Tool</th><th>Rolle</th><th>Status</th><th>Code</th><th>Dauer</th><th>Argumente</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+<p id="empty" class="empty" style="display:none">Noch keine Tool-Calls im Protokoll. Das Protokoll schreibt der Server ab Lab 8.1 (logging_config.py).</p>
+<script>
+async function refresh() {
+  const res = await fetch('/api/calls');
+  const { summary, calls } = await res.json();
+  const alertBox = document.getElementById('alert');
+  alertBox.style.display = summary.alert ? 'block' : 'none';
+  alertBox.textContent = `ALARM: ${summary.recent_denied} abgelehnte Aufrufe in den letzten 60 Sekunden`;
+  document.getElementById('summary').innerHTML =
+    `<div class="card">Aufrufe: <b>${summary.total}</b></div>` +
+    Object.entries(summary.by_status).map(([k, v]) => `<div class="card ${k}">${k}: <b>${v}</b></div>`).join('');
+  document.getElementById('empty').style.display = calls.length ? 'none' : 'block';
+  const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  document.getElementById('rows').innerHTML = calls.slice().reverse().map(c =>
+    `<tr><td>${esc(c.ts)}</td><td>${esc(c.tool)}</td><td>${esc(c.role)}</td><td class="${esc(c.status)}">${esc(c.status)}</td>` +
+    `<td>${esc(c.error_code)}</td><td>${esc(c.duration_ms)} ms</td><td>${esc(JSON.stringify(c.args))}</td></tr>`).join('');
+}
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>

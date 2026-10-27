@@ -1,0 +1,68 @@
+# Showcase D: ein Befehl startet MCP-Server, Mock-API und Dashboard.
+# Aus dem Projektordner (output/project):
+#   docker compose -f checkpoints/ende-m07-abgesichert/docker-compose.yml up --build
+# Schreibrechte für die Demo: VANTRA_ROLE=operator docker compose -f ... up --build
+
+name: vantra-ops
+
+x-build: &build
+  context: ../..            # Projektordner
+  dockerfile: checkpoints/ende-m07-abgesichert/Dockerfile
+  args:
+    APP_DIR: ${APP_DIR:-checkpoints/ende-m07-abgesichert}
+
+services:
+  mcp-server:
+    build: *build
+    image: vantra-ops-mcp:local
+    environment:
+      MCP_TRANSPORT: streamable-http
+      MCP_PORT: "8000"
+      MOCK_API_URL: http://mock-api:8001
+      TOOL_CALL_LOG: /data/tool_calls.jsonl
+      VANTRA_ROLE: ${VANTRA_ROLE:-viewer}
+    ports:
+      - "${MCP_PORT:-8000}:8000"
+    volumes:
+      - toolcalls:/data
+    depends_on:
+      mock-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mock-api:
+    build: *build
+    image: vantra-ops-mcp:local
+    command: ["python", "shared/mock_api/app.py"]
+    environment:
+      MOCK_API_HOST: 0.0.0.0
+      MOCK_API_PORT: "8001"
+    ports:
+      - "${MOCK_API_PORT:-8001}:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 10s
+      timeout: 4s
+      retries: 3
+      start_period: 5s
+
+  dashboard:
+    build: *build
+    image: vantra-ops-mcp:local
+    command: ["python", "shared/dashboard/server.py"]
+    environment:
+      DASHBOARD_HOST: 0.0.0.0
+      DASHBOARD_PORT: "8080"
+      TOOL_CALL_LOG: /data/tool_calls.jsonl
+    ports:
+      - "${DASHBOARD_PORT:-8080}:8080"
+    volumes:
+      - toolcalls:/data:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"]
+      interval: 10s
+      timeout: 4s
+      retries: 3
+
+volumes:
+  toolcalls:

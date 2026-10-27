@@ -1,0 +1,29 @@
+# Starter Lab 5.2: Dockerfile für den eigenen MCP-Server. Kopieren nach playground/Dockerfile.
+# Bauen aus dem Projektordner:  docker build -f playground/Dockerfile -t vantra-ops-mcp:local .
+# Das Image baut schon, ist aber noch nicht sicher und nicht betriebsbereit: Lücken unten schließen.
+FROM python:3.13-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# TODO(Aufgabe 1): Konfiguration per Umgebung festlegen: MCP_TRANSPORT=streamable-http, MCP_HOST=0.0.0.0,
+#   MCP_PORT=8000, TOOL_CALL_LOG=/data/tool_calls.jsonl. Keine Secrets (Schlüssel, Tokens) in ENV schreiben.
+
+WORKDIR /app
+
+COPY requirements-server.txt .
+RUN pip install --no-cache-dir -r requirements-server.txt
+
+# TODO(Aufgabe 2): Nicht-Root-Nutzer anlegen (uid 10001), /data erzeugen und ihm übertragen
+
+# Server (eigener Stand aus dem Playground) und gemeinsame Hilfsmodule
+COPY playground/ /app/
+COPY shared/ /app/shared/
+
+# TODO(Aufgabe 2): mit USER auf den Nicht-Root-Nutzer wechseln
+
+EXPOSE 8000
+
+# TODO(Aufgabe 3): HEALTHCHECK ergänzen, der http://127.0.0.1:8000/health abfragt (Python genügt, kein curl nötig)
+
+CMD ["python", "server.py"]

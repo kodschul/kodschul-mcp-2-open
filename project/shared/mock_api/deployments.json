@@ -1,0 +1,65 @@
+[
+  {
+    "id": "dep-2037",
+    "ticket_id": "VAN-101",
+    "service": "notification-service",
+    "version": "1.8.0",
+    "environment": "production",
+    "status": "succeeded",
+    "started_at": "2026-10-25T21:02:11Z",
+    "log": [
+      "2026-10-25T21:02:11Z INFO  pipeline  build notification-service:1.8.0",
+      "2026-10-25T21:03:40Z INFO  deploy    rolling update 3/3 pods ready",
+      "2026-10-25T21:03:52Z INFO  smoke     smtp-relay reachable, 1 test mail queued",
+      "2026-10-25T21:04:01Z INFO  deploy    finished"
+    ]
+  },
+  {
+    "id": "dep-2039",
+    "ticket_id": "VAN-102",
+    "service": "auth-service",
+    "version": "2.14.0",
+    "environment": "production",
+    "status": "succeeded",
+    "started_at": "2026-10-23T18:30:00Z",
+    "log": [
+      "2026-10-23T18:30:00Z INFO  pipeline  build auth-service:2.14.0",
+      "2026-10-23T18:31:20Z INFO  deploy    rolling update 4/4 pods ready",
+      "2026-10-23T18:31:45Z INFO  smoke     login p95=410ms",
+      "2026-10-23T18:31:50Z INFO  deploy    finished"
+    ]
+  },
+  {
+    "id": "dep-2041",
+    "ticket_id": "VAN-102",
+    "service": "auth-service",
+    "version": "2.14.1",
+    "environment": "production",
+    "status": "degraded",
+    "started_at": "2026-10-26T22:15:03Z",
+    "log": [
+      "2026-10-26T22:15:03Z INFO  pipeline  build auth-service:2.14.1",
+      "2026-10-26T22:16:30Z INFO  deploy    rolling update 4/4 pods ready",
+      "2026-10-26T22:16:58Z WARN  smoke     login p95=9800ms (limit 1500ms)",
+      "2026-10-26T22:17:02Z WARN  db        connection pool exhausted: 50/50 in use",
+      "2026-10-26T22:17:03Z ERROR auth      token cache disabled by config key AUTH_CACHE_TTL=0",
+      "2026-10-26T22:17:10Z INFO  deploy    finished with warnings, rollback not triggered"
+    ]
+  },
+  {
+    "id": "dep-2043",
+    "ticket_id": "VAN-103",
+    "service": "report-service",
+    "version": "3.2.5",
+    "environment": "production",
+    "status": "failed",
+    "started_at": "2026-10-24T20:10:00Z",
+    "log": [
+      "2026-10-24T20:10:00Z INFO  pipeline  build report-service:3.2.5",
+      "2026-10-24T20:11:30Z INFO  deploy    rolling update 2/2 pods ready",
+      "2026-10-24T23:00:01Z INFO  job       nightly-export started",
+      "2026-10-24T23:30:01Z ERROR job       nightly-export timeout after 1800s",
+      "2026-10-24T23:30:02Z ERROR job       partial file discarded: export_2026-10-24.csv"
+    ]
+  }
+]

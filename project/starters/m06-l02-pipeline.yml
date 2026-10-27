@@ -1,0 +1,20 @@
+# Pipeline-Skizze – Starter (Lab 6.2, Teil 2)
+# Kopieren nach playground/pipeline.yml. GitHub-Actions-Syntax; wird nicht ausgeführt, nur skizziert.
+name: vantra-ops-mcp
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # TODO(Aufgabe 1): Image bauen (docker build -f playground/Dockerfile .) und mit dem Commit-SHA taggen
+
+  # TODO(Aufgabe 2): Job test (pytest) ergänzen
+  # TODO(Aufgabe 3): Job scan ergänzen: Abhängigkeiten (pip-audit) und Image/Dateisystem (z. B. Trivy) prüfen.
+  #   Welcher Schritt verhindert, dass ein kompromittiertes Paket oder Tool in Produktion gelangt?
+  # TODO(Aufgabe 4): Job deploy ergänzen: manuelle Freigabe (environment), kubectl set image, kubectl rollout status
+  # TODO(Aufgabe 5): Job rollback ergänzen: läuft bei Fehlschlag von deploy und führt kubectl rollout undo aus

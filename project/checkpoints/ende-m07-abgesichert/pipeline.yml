@@ -1,0 +1,105 @@
+# Pipeline-Skizze für den Vantra Ops Agent (GitHub-Actions-Syntax).
+# Stufen: build -> test -> scan -> deploy; bei fehlgeschlagenem Rollout greift rollback.
+# Versionen der Actions vor dem Einsatz prüfen und auf Commit-SHAs festlegen.
+name: vantra-ops-mcp
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/vantra-systems/vantra-ops-mcp
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        run: echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        if: github.event_name == 'push'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: checkpoints/ende-m07-abgesichert/Dockerfile
+          build-args: APP_DIR=checkpoints/ende-m07-abgesichert
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+      - run: pytest -q   # Policy-, Konflikt- und Logging-Tests ohne LLM
+
+  scan:
+    # Verhindert, dass ein kompromittiertes Paket oder Tool in Produktion gelangt
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pip-audit && pip-audit -r requirements-server.txt
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+      - run: |
+          # Tool-Beschreibungen gegen die freigegebene Liste prüfen (Tool-Spoofing)
+          pytest -q tests/test_m07_policy.py
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, scan]
+    if: github.ref == 'refs/heads/main'
+    environment: production   # manuelle Freigabe über Environment-Schutzregel
+    env:
+      KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+      - name: Zugang zum Cluster
+        run: mkdir -p ~/.kube && echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
+      - name: Rollout
+        run: |
+          kubectl set image deployment/vantra-ops-mcp mcp-server=${IMAGE}:${{ needs.build.outputs.tag }}
+          kubectl rollout status deployment/vantra-ops-mcp --timeout=120s
+
+  rollback:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: failure()
+    environment: production
+    env:
+      KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
+    steps:
+      - uses: azure/setup-kubectl@v4
+      - name: Zugang zum Cluster
+        run: mkdir -p ~/.kube && echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
+      - name: Zurück auf die letzte funktionierende Revision
+        run: |
+          kubectl rollout undo deployment/vantra-ops-mcp
+          kubectl rollout status deployment/vantra-ops-mcp --timeout=120s

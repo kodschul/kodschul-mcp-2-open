@@ -1,0 +1,12 @@
+Verbunden mit vantra-ops, Protokoll 2026-07-28
+Tools: get_ticket, get_deployment_log, update_ticket_status  ·  LLM: replay
+
+Nutzer: Zeige Ticket VAN-102
+  → Tool-Call: get_ticket({"ticket_id": "VAN-102"})
+  ← ok: {   "id": "VAN-102",   "title": "Login-Seite lädt nach Release 2.14 sehr langsam",   "status": "open",   "priority": "high",   "assignee": "jonas.brandt",   "se…
+Agent: Ticket VAN-102: Login-Seite lädt nach Release 2.14 sehr langsam (Status open, Version 3).
+
+Nutzer: Zeige das Deployment-Log dazu
+  → Tool-Call: get_deployment_log({})
+  ← ok: {   "id": "dep-2041",   "ticket_id": "VAN-102",   "service": "auth-service",   "version": "2.14.1",   "environment": "production",   "status": "degraded",   "lo…
+Agent: Deployment dep-2041 (auth-service 2.14.1, Status degraded). Letzte Zeilen: auth      token cache disabled by config key AUTH_CACHE_TTL=0;  deploy    finished with warnings, rollback not triggered

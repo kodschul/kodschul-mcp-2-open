@@ -1,0 +1,32 @@
+# Starter Lab 6.1: Compose-Datei. Kopieren nach playground/docker-compose.yml.
+# Start aus dem Projektordner:  docker compose -f playground/docker-compose.yml up --build
+# Der Dienst mcp-server ist vorbereitet; Mock-API und Dashboard fehlen noch.
+name: vantra-ops
+
+services:
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: playground/Dockerfile   # aus Lab 5.2
+    image: vantra-ops-mcp:local
+    environment:
+      MCP_TRANSPORT: streamable-http
+      MCP_PORT: "8000"
+      # TODO(Aufgabe 2): MOCK_API_URL auf den Dienstnamen der Mock-API setzen (http://<dienstname>:8001)
+      TOOL_CALL_LOG: /data/tool_calls.jsonl
+      VANTRA_ROLE: ${VANTRA_ROLE:-viewer}
+    # TODO(Aufgabe 1): Port 8000 des Containers nach außen freigeben (ports)
+    # TODO(Aufgabe 3): mcp-server erst starten, wenn mock-api gesund ist (depends_on mit condition: service_healthy)
+    volumes:
+      - toolcalls:/data
+
+  # TODO(Aufgabe 2): Dienst mock-api ergänzen:
+  #   - gleiches Image (build wie oben), command: ["python", "shared/mock_api/app.py"]
+  #   - Umgebung MOCK_API_HOST=0.0.0.0, MOCK_API_PORT=8001, Port 8001 freigeben
+  #   - healthcheck, der http://127.0.0.1:8001/health abfragt
+
+  # TODO(Aufgabe 4, Erweiterung): Dienst dashboard ergänzen: command ["python", "shared/dashboard/server.py"],
+  #   DASHBOARD_HOST=0.0.0.0, Port 8080, Volume toolcalls schreibgeschützt (:ro) auf /data einbinden
+
+volumes:
+  toolcalls:

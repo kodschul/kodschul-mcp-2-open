@@ -1,0 +1,7 @@
+# Vantra Ops Agent: Python-Pakete des Kurses (verifiziert mit Python 3.13, macOS, 27.10.2026)
+# Server-Laufzeit (auch im Container) steht getrennt in requirements-server.txt.
+-r requirements-server.txt
+openai==3.40.0
+pytest==9.1.1
+pytest-asyncio==1.4.1
+PyYAML==6.0.3
