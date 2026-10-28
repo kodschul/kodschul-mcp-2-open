@@ -1,25 +1,75 @@
 # Überblick: Model Context Protocol (MCP) in Agentic AI
 
-Zwei Tage, onsite, kleine Gruppe (2–3 Teilnehmende). Ein Python-Projekt wächst über beide Tage zum „Vantra Ops Agent“: Tag 1 entsteht ein lauffähiger MCP-Agentenprototyp, Tag 2 wird er containerisiert, abgesichert und mit Monitoring in einem Mini-Workflow demonstriert.
+## Die Entwicklung von KI-Agenten
 
-## Ziel
+- Ein LLM (großes Sprachmodell wie GPT oder `qwen3`) erzeugt nur Text; es liest keine Tickets und ändert keine Daten
+- **Function Calling**: Das LLM antwortet statt mit Text mit einem Funktionsaufruf, z. B. `get_ticket(ticket_id="VAN-102")`
+  - Die Anwendung führt die Funktion aus und gibt das Ergebnis an das LLM zurück
+  - Eine so angebotene Funktion heißt **Tool**
+  - **Agent**: Anwendung, in der ein LLM in einer Schleife Tools vorschlägt und die Anwendung sie ausführt, bis eine Textantwort steht
+- Agenten lesen damit Tickets, prüfen Deployments, ändern Status
+- Problem: Jede Anwendung beschreibt und bindet ihre Tools selbst an, in ihrem eigenen Format
+- Neue Fragen für den Betrieb: Kontext, mehrere Agenten gleichzeitig, Rechte, Angriffe über manipulierte Daten, Monitoring
 
-- Architektur und Protokoll von MCP (Host, Client, Server, JSON-RPC, Tools, Resources) am eigenen Server nachvollziehen.
-- Zwei eigene Tools mit Kontextverwaltung und Versionsprüfung bei konkurrierenden Agenten bauen.
-- Einen Agent-Client anbinden und den Prototyp end-to-end testen.
-- Den Server für Containerbetrieb vorbereiten, containerisieren, orchestrieren und mit einer Zugriffsrichtlinie absichern.
-- Tool-Calls protokollieren, Alarmregeln definieren und offene Lücken bis zum Produktivbetrieb benennen.
+## Was ist MCP?
+
+- MCP (Model Context Protocol): offener Standard, über den KI-Anwendungen Tools und Daten anbinden
+- Ein Tool wird einmal als **MCP-Server** gebaut und ist dann von jeder MCP-fähigen Anwendung nutzbar
+- Drei Rollen:
+  - **Host**: Anwendung, die die Verbindungen zu den Servern hält und entscheidet, welcher Aufruf passiert (im Agenten schlägt das LLM vor, im Inspector oder Skript-Client entscheidet die Person)
+  - **Client**: die Verbindung des Hosts zu genau einem Server; fertig im SDK (Python-Paket `mcp`) enthalten
+  - **Server**: Programm, das Tools anbietet, z. B. „Ticket lesen“
+- Function Calling bleibt: Das LLM wählt weiterhin per Function Calling ein Tool, MCP regelt, woher die Tools kommen und wie sie ausgeführt werden
+
+## Warum MCP?
+
+| | Ohne MCP | Mit MCP |
+| --- | --- | --- |
+| Anbindung | M Anwendungen × N Systeme = M·N eigene Adapter | statt M·N eigener Adapter: N Server plus ein generischer MCP-Client (SDK) je Anwendung |
+| Neues Tool | in jeder Anwendung nachziehen | einmal im Server ergänzen, Anwendungen finden es selbst |
+| Anbieter | an das Format eines Modellanbieters gebunden | offener Standard, Anwendung und Modell austauschbar |
+| Betrieb | Tool-Code steckt in der Anwendung | Server läuft als eigener Dienst mit eigenen Rechten |
+
+Details und Ablauf eines Tool-Aufrufs als Diagramm: [Lab 1.1](../m01-mcp-foundations-and-setup/l01-architecture-thx.md).
+
+## Kursziel und Ergebnis
+
+- Ergebnis: „Vantra Ops Agent“
+  - MCP-Server in Python mit zwei Tools
+  - angebunden an einen Agent-Client
+  - containerisiert und orchestriert
+  - mit Zugriffsrichtlinie abgesichert
+  - über ein Tool-Call-Protokoll überwacht
+- Tag 1: lauffähiger Agentenprototyp (Module 1–4)
+- Tag 2: Container, Security, Monitoring im Mini-Workflow (Module 5–8)
+
+## Inhalte
+
+- MCP-Architektur: Host, Client, Server
+- Protokoll: JSON-RPC (einheitliches JSON-Format für Anfragen und Antworten), Tools, Resources
+- Zwei eigene Tools mit Kontextverwaltung
+- Versionsprüfung bei konkurrierenden Agenten
+- Agent-Client anbinden, Prototyp end-to-end testen
+- Server containerisieren und orchestrieren (Docker, Compose, Kubernetes)
+- Absicherung: Rollen, Bestätigung, Eingabeprüfung, Prompt Injection
+- Monitoring: Tool-Calls protokollieren, Alarmregeln, Lücken bis zum Produktivbetrieb
 
 ## Zielgruppe
 
-IT-Architekt:innen, KI-Entwickler:innen mit Fokus Agentic AI, DevOps, Cloud Engineers, Systemintegrator:innen und IT-Sicherheitsverantwortliche. Niveau: fortgeschritten. Kein Fokus auf einen einzelnen Hersteller-Stack.
+- IT-Architekt:innen
+- KI-Entwickler:innen mit Fokus Agentic AI
+- DevOps und Cloud Engineers
+- Systemintegrator:innen
+- IT-Sicherheitsverantwortliche
+- Niveau: fortgeschritten
+- Herstellerneutral, kein Fokus auf einen einzelnen Stack
 
 ## Voraussetzungen
 
 | Bereich | Anforderung |
 | --- | --- |
-| Kenntnisse | Python lesen und anpassen, Terminal, Grundlagen von Docker (Image, Container) und HTTP/JSON |
-| Gerät | Schulungs-PC mit Python ≥ 3.11, Node.js (`npx`), Docker Desktop, Ollama mit `qwen3:8b`, Code-Editor |
+| Kenntnisse | Python lesen und anpassen, Terminal, Docker-Grundlagen (Image, Container), HTTP/JSON |
+| Gerät | Python ≥ 3.11, Node.js (`npx`), Docker Desktop, Ollama mit `qwen3:8b`, Code-Editor |
 | Zugänge | kein LLM-API-Key nötig; Internet für `pip`, `npx`, `docker pull` |
 | Optional | lokaler Kubernetes-Cluster (Modul 6); ohne Cluster wird das Manifest nur validiert |
 
@@ -27,7 +77,9 @@ Prüfung der Umgebung und Fallbacks: [`../00-setup-and-installation.md`](../00-s
 
 ## Szenario und Projekt
 
-Die fiktive Firma **Vantra Systems** macht interne Tools (Ticket-API, Deployment-API, Metriken) über MCP-Server für KI-Agenten zugänglich. Das Projekt „Vantra Ops Agent“ nutzt eine gemockte Ticket-/Deployment-API.
+- Fiktive Firma **Vantra Systems**
+- Interne Tools (Ticket-API, Deployment-API, Metriken) über MCP-Server für KI-Agenten zugänglich
+- Projekt „Vantra Ops Agent“ mit gemockter Ticket-/Deployment-API
 
 | Ordner in `project/` | Rolle |
 | --- | --- |
@@ -73,11 +125,20 @@ Zeitraster beider Tage: 09:00–10:30 · Pause bis 10:45 · 10:45–12:15 · Mit
 
 ## Arbeitsmethode
 
-- Jedes Lab folgt demselben Ablauf: Theorie (`-thx.md`), Übung (`-exc.md`), Lösung (`-sol.md`).
-- Projekt-Labs: Starter in den Playground kopieren, Lücken (`TODO(Aufgabe n)`) schließen, mit dem Beispiel in `examples/` vergleichen.
-- Jede Projekt-Übung hat eine **Basisaufgabe** (Pflicht, Checkpoint) und eine **Erweiterung** (optional, nie Voraussetzung für spätere Labs). Für Sicherheits- und Architekturrollen enthalten Modul 5 und 7 Erweiterungen ohne Programmieranteil (Review, Entscheidung).
-- Tests laufen lokal: stdio zuerst, MCP Inspector oder Skript-Client als Testclient, Ollama als lokales LLM. Ohne funktionierendes Modell läuft der Agent mit dem Replay-LLM (Skript-Agent).
-- Ein Spickzettel je Modul (`*-cheatsheet.md`) fasst Befehle und Syntax zusammen.
+- Jedes Lab: Theorie (`-thx.md`, im Modulordner) → Übung (`-exc.md`) → Lösung (`-sol.md`, beide im Lab-Unterordner)
+- Projekt-Labs:
+  - Starter in den Playground kopieren
+  - Lücken schließen: `TODO(Aufgabe n)` gehört zu Aufgabe n der Übung, `TODO(Erweiterung)` ist optional
+  - mit dem Beispiel in `examples/` vergleichen
+- Jede Projekt-Übung:
+  - **Basisaufgabe**: Pflicht, mit Checkpoint
+  - **Erweiterung**: optional, nie Voraussetzung für spätere Labs
+  - Modul 5 und 7: Erweiterungen ohne Programmieranteil (Review, Entscheidung) für Sicherheits- und Architekturrollen
+- Tests lokal:
+  - stdio zuerst
+  - MCP Inspector oder Skript-Client als Testclient
+  - Ollama als lokales LLM; ohne funktionierendes Modell Replay-LLM (Skript-Agent)
+- Ein Spickzettel je Modul (`*-cheatsheet.md`) mit Befehlen und Syntax
 
 ## Stack (Stand: 27.10.2026)
 

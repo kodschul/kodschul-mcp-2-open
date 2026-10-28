@@ -4,14 +4,17 @@ Kopieren nach `playground/capstone.md` und ausfüllen. Ziel: containerisierten, 
 
 ## Voraussetzung (Checkliste)
 
-- [ ] Server-Stand mit Policy (Lab 7.1) und Logging (Lab 8.1) liegt im `playground/`. Bei Lücken: `checkpoints/ende-m07-abgesichert/` plus `logging_config.py` aus `examples/m08-observability-and-capstone/l01-monitoring-setup/`
-- [ ] Dockerfile und `docker-compose.yml` aus Lab 5.2 und 6.1 liegen im `playground/`
+- [ ] Server-Stand mit Policy (Lab 7.1) und Logging (Lab 8.1) liegt im `playground/`. Bei Lücken: `cp examples/m08-observability-and-capstone/l01-monitoring/{server.py,context.py,auth.py,policy.md,logging_config.py} playground/`
+- [ ] Compose-Datei in **beiden** Terminals gesetzt: `export COMPOSE=examples/m06-containerization-cicd/l01-docker/docker-compose.yml` (Server, Mock-API, Dashboard; baut `playground/`). Eigene Datei mit Dienst `dashboard` (Erweiterung Lab 6.1): `export COMPOSE=playground/docker-compose.yml`
 
 ## Start
 
 ```bash
-docker compose -f playground/docker-compose.yml up --build            # Rolle viewer (Standard)
-VANTRA_ROLE=operator docker compose -f playground/docker-compose.yml up --build   # Schreibrechte
+docker compose -f "$COMPOSE" up -d --build              # Rolle viewer (Standard), im Hintergrund
+VANTRA_ROLE=operator docker compose -f "$COMPOSE" up -d  # Rollenwechsel: Schreibrechte
+docker compose -f "$COMPOSE" up -d                       # zurück zu viewer
+docker compose -f "$COMPOSE" logs -f mcp-server          # Server-Logs (Ctrl+C beendet nur die Anzeige)
+curl -X POST http://localhost:8001/reset                 # Mock-Daten zurücksetzen
 ```
 
 Agent (zweites Terminal):

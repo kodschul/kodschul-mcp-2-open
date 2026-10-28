@@ -4,6 +4,8 @@ Schnellreferenz für Modul 4 (Agent-Client, Testlauf, Debrief). Alle Befehle im 
 
 ## Agent-Client mit MCP-Python-SDK 2.3.0
 
+Version fest in `project/requirements.txt` (`mcp==2.3.0`, `openai==3.40.0`; Stand 27.10.2026).
+
 | Syntax | Wirkung |
 | --- | --- |
 | `from mcp import Client` | Client des SDKs |
@@ -24,10 +26,22 @@ Schnellreferenz für Modul 4 (Agent-Client, Testlauf, Debrief). Alle Befehle im 
 | --- | --- |
 | Tool in LLM-Format | `{"type": "function", "function": {"name": tool.name, "description": tool.description or "", "parameters": tool.input_schema}}` |
 | Modell fragen | `reply = llm.chat(messages, llm_tools)` → `{"content": …, "tool_calls": […]}` |
+| Schleife mit Obergrenze | `for _ in range(MAX_STEPS):` … `else: print("Agent: Abbruch …")`, `MAX_STEPS = 6` |
 | Ende der Schleife | `reply["tool_calls"]` ist leer: `reply["content"]` ist die Antwort |
 | Assistenten-Nachricht mit Tool-Wunsch | `{"role": "assistant", "content": …, "tool_calls": [{"id": …, "type": "function", "function": {"name": …, "arguments": json.dumps(args)}}]}` |
 | Ergebnis zurück | `{"role": "tool", "tool_call_id": call["id"], "content": text}` |
 | Fehler kennzeichnen | Präfix `"FEHLER: "` bei `result.is_error` |
+
+## Nachrichtenrollen
+
+| Rolle | Wer schreibt | Inhalt |
+| --- | --- | --- |
+| `system` | Client | `SYSTEM_PROMPT`, einmal am Anfang |
+| `user` | Nutzer | Eingabe |
+| `assistant` | Modell | Text oder `tool_calls` mit `id` |
+| `tool` | Client | Tool-Ergebnis mit `tool_call_id` |
+
+Das Modell ist zustandslos: Der ganze Verlauf geht bei jedem Aufruf mit.
 
 ## LLM-Backend (`.env`)
 
@@ -47,7 +61,7 @@ Schnellreferenz für Modul 4 (Agent-Client, Testlauf, Debrief). Alle Befehle im 
 | `python playground/agent.py --replay` | eigener Agent mit Replay-LLM (Skript-Agent) |
 | `python shared/agent_client.py --server playground/server.py` | vorbereiteter Agent-Client, echtes LLM |
 | `python shared/agent_client.py --server playground/server.py --replay` | Replay-Skript `dialog` (Skript-Agent) |
-| `python shared/agent_client.py --server playground/server.py --replay workflow --confirm none` | Replay-Skript `workflow` (Ticket, Log, Statusänderung) |
+| `python shared/agent_client.py --server playground/server.py --replay workflow` | Replay-Skript `workflow` (Ticket, Log, Statusänderung) |
 | `python shared/agent_client.py --server playground/server.py --replay --prompt "Zeige Ticket VAN-999"` | einzelne Eingabe (`--prompt` mehrfach möglich) |
 | `python shared/script_client.py --server playground/server.py` | Tools auflisten, ohne LLM |
 
@@ -82,8 +96,12 @@ Schnellreferenz für Modul 4 (Agent-Client, Testlauf, Debrief). Alle Befehle im 
 
 | Symptom | Ursache |
 | --- | --- |
-| `NotImplementedError: TODO(Aufgabe n)` | Lücke im Starter nicht ausgefüllt |
-| Verbindungsfehler zum LLM | Ollama läuft nicht oder `LLM_BASE_URL` falsch: `--replay` nutzen |
+| `NotImplementedError: TODO(Aufgabe n)` bzw. `TODO(Aufgabe 1): Serverparameter fehlen …` | Lücke im Starter nicht ausgefüllt |
+| `APIConnectionError: Connection error.` | Ollama läuft nicht oder `LLM_BASE_URL` falsch: `ollama list` prüfen, Ollama-App starten, sonst `--replay` |
+| `model "qwen3:8b" not found` | Modell fehlt: `ollama list`, ggf. `LLM_MODEL=qwen3:4b` |
+| erste Antwort sehr langsam | Ollama lädt das Modell; über 60 Sekunden je Antwort: `--replay` |
+| `Agent: Abbruch nach zu vielen Tool-Schritten.` | Modell ruft endlos Tools auf; `MAX_STEPS` greift |
+| `Replay: Für diese Eingabe gibt es kein Skript.` | eigener Satz im Replay-Modus; nur Skriptsätze verwenden |
 | Modell ruft kein oder falsches Tool | Beschreibung unklar oder Modell zu klein; Docstring abgrenzend formulieren |
 | `Keine ticket_id angegeben und kein Ticket im Kontext` | neuer Prozess: erst `get_ticket`, dann Log in einer Sitzung |
-| `playground/server.py` nicht gefunden | Stand aus Lab 3.3 fehlt: aus `examples/m03-context-and-state/l03-multi-agent-sync/` kopieren |
+| `playground/server.py` nicht gefunden | Stand aus Lab 3.3 fehlt: aus `examples/m03-context-and-state/l03-multi-agent/` kopieren |

@@ -1,0 +1,191 @@
+# Vantra Ops Agent (MCP-Server) auf Kubernetes. Nur validiert, nicht zwingend angewendet.
+# Prüfen:  kubectl apply --dry-run=client --validate=false -f k8s.yaml
+# Anwenden (nur mit lokalem Cluster): Image bauen/laden und kubectl apply -f k8s.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vantra-ops-config
+  labels:
+    app: vantra-ops-mcp
+data:
+  MCP_TRANSPORT: streamable-http
+  MCP_HOST: 0.0.0.0
+  MCP_PORT: "8000"
+  MOCK_API_URL: http://vantra-mock-api:8001
+  TOOL_CALL_LOG: /data/tool_calls.jsonl
+  VANTRA_ROLE: viewer
+  LOG_LEVEL: INFO
+---
+# Platzhalter: den echten Wert legt der Betrieb an (z. B. kubectl create secret generic ...),
+# er gehört nicht in Git. Der Server liest ihn optional aus MOCK_API_TOKEN.
+#   kubectl create secret generic vantra-ops-secrets --from-literal=MOCK_API_TOKEN=<wert>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vantra-ops-mcp
+  labels:
+    app: vantra-ops-mcp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vantra-ops-mcp
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: vantra-ops-mcp
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mcp-server
+          image: vantra-ops-mcp:1.0.0   # feste Version statt latest, damit ein Rollback eindeutig ist
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: mcp
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: vantra-ops-config
+          env:
+            - name: MOCK_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vantra-ops-secrets
+                  key: MOCK_API_TOKEN
+                  optional: true
+          startupProbe:
+            httpGet:
+              path: /health
+              port: mcp
+            periodSeconds: 2
+            failureThreshold: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: mcp
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: mcp
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vantra-ops-mcp
+  labels:
+    app: vantra-ops-mcp
+spec:
+  type: ClusterIP
+  selector:
+    app: vantra-ops-mcp
+  ports:
+    - name: mcp
+      port: 8000
+      targetPort: mcp
+---
+# Gemockte Ticket-/Deployment-API: gleiches Image, eigener Befehl (wie in docker-compose.yml).
+# Ohne diesen Dienst antwortet /health, Tool-Aufrufe schlagen aber fehl.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vantra-mock-api
+  labels:
+    app: vantra-mock-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vantra-mock-api
+  template:
+    metadata:
+      labels:
+        app: vantra-mock-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mock-api
+          image: vantra-ops-mcp:1.0.0
+          imagePullPolicy: IfNotPresent
+          command: ["python", "shared/mock_api/app.py"]
+          env:
+            - name: MOCK_API_HOST
+              value: 0.0.0.0
+            - name: MOCK_API_PORT
+              value: "8001"
+          ports:
+            - name: api
+              containerPort: 8001
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vantra-mock-api
+  labels:
+    app: vantra-mock-api
+spec:
+  type: ClusterIP
+  selector:
+    app: vantra-mock-api
+  ports:
+    - name: api
+      port: 8001
+      targetPort: api

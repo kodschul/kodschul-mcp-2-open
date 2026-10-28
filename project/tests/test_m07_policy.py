@@ -6,7 +6,7 @@ import pytest
 
 from conftest import EX, PROJECT, SRV_SECURE, connect, json_of, text_of
 
-SECURE_DIR = EX / "m07-security-hardening/l01-access-control-sandboxing"
+SECURE_DIR = EX / "m07-security-hardening/l01-access-control"
 WRITE = {"ticket_id": "VAN-101", "status": "closed", "expected_version": 1}
 
 
@@ -102,7 +102,10 @@ def test_attack_samples_are_well_formed_and_injection_ticket_exists():
     assert len(samples) >= 3
     for path in samples:
         data = json.loads(path.read_text(encoding="utf-8"))
-        assert data["auffaelligkeiten"] and data["manipuliertes_ergebnis"]
+        assert data["manipuliertes_ergebnis"]
+        assert "auffaelligkeiten" not in data, f"{path.name}: Auffälligkeiten gehören in die Lösung, nicht in die Probe"
+    solution = (PROJECT.parent / "m07-security-hardening/l02-injection/l02-injection-sol.md").read_text(encoding="utf-8")
+    assert "Auffälligkeiten je Probe" in solution
     tickets = json.loads((PROJECT / "shared/mock_api/tickets.json").read_text(encoding="utf-8"))
     injected = next(t for t in tickets if t["id"] == "VAN-106")
     assert "update_ticket_status" in injected["description"]

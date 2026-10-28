@@ -1,6 +1,6 @@
 # Lab 7.3 – Übung: Security-Review mit Checkliste
 
-**Dauer:** ca. 30 Minuten
+**Dauer:** ca. 25 Minuten
 **Ändert die Vantra-Projektbasis?** Nein — Ergebnis ist ein Review-Dokument; Code, Dockerfile und Policy des Projekts bleiben unverändert.
 **Arbeitsdatei:** `playground/review.md`
 **Starter:** `starters/m07-l03-checklist.md`
@@ -12,7 +12,10 @@
 
 - Starter kopieren: `cp starters/m07-l03-checklist.md playground/review.md`.
 - Im Kopf der Datei Prüfer:in und geprüftes Objekt (Pfad) eintragen.
-- `checklist.md` öffnen. Der Starter enthält A1–A7 und B1–B7; A8, B8 und C1–C5 stehen nur dort und werden in die Tabelle übernommen.
+- `checklist.md` zum Nachlesen öffnen. Der Starter enthält alle 21 Prüfpunkte (A1–A8, B1–B8, C1–C5).
+- Im Paar mit eigenem Stand: Platz tauschen oder die Dateien am Bildschirm der Nachbarin oder des Nachbarn lesen; eine Datei-Übertragung ist nicht nötig.
+
+**Zeitplan:** Aufgabe 1 ca. 10 Minuten, Aufgabe 2 ca. 8 Minuten, Aufgabe 3 und 4 je ca. 3–4 Minuten.
 
 ## Aufgaben
 

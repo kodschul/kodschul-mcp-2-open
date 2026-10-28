@@ -20,7 +20,7 @@ Modulübergreifende Regeln aus dem Kurs, je mit einem Grund. Details stehen in d
 
 | Regel | Grund | Lab |
 | --- | --- | --- |
-| Kontext als Schema führen (Feld, Quelle, Lebensdauer, Sichtbarkeit für das LLM) | Es bleibt nachvollziehbar, was gespeichert und was dem Modell übergeben wird | 3.2 |
+| Kontext als Schema führen (Feld, Quelle, Lebensdauer, Sichtbarkeit) | Es bleibt nachvollziehbar, was gespeichert wird und was die Resource `context://session` zeigt; serverinterne Felder bleiben verborgen | 3.2 |
 | Je Tool-Ergebnis ein eigenes Feld, nur Ausschnitte ablegen | Das zweite Tool überschreibt den Kontext des ersten nicht, das Kontextfenster bleibt klein | 3.2 |
 | Geheimnisse und Tokens nie in Prompt, Kontext oder Memory | Modell und Protokoll würden sie offenlegen | 3.1, 5.2 |
 | Schreibende Tools mit `expected_version` absichern | Ohne Versionsprüfung überschreibt ein Agent die Änderung eines anderen unbemerkt | 3.3 |
@@ -44,9 +44,9 @@ Modulübergreifende Regeln aus dem Kurs, je mit einem Grund. Details stehen in d
 | Abhängigkeiten vor dem Code kopieren (eigener Layer) | Codeänderungen installieren nicht alles neu | 5.2 |
 | Nicht als Root laufen, nur `/data` beschreibbar | Ein kompromittierter Prozess hat weniger Möglichkeiten | 5.2, 7.1 |
 | Festen Image-Tag verwenden, nie `latest` | Rollout und Rollback beziehen sich auf eine bekannte Version | 5.1, 6.2 |
-| Secrets zur Laufzeit übergeben (`-e`, Compose-Secret, `secretKeyRef`), nie per `ENV` oder im Repo | `docker inspect` und `docker history` zeigen `ENV`-Werte | 5.2, 6.2 |
+| Secrets zur Laufzeit übergeben (`docker run -e`, Kubernetes `secretKeyRef`), nie per `ENV` oder im Repo | `docker inspect` und `docker history` zeigen `ENV`-Werte | 5.2, 6.2 |
 | Kubernetes-Manifest vor dem Anwenden validieren (`kubeconform`) | Schemafehler fallen ohne Cluster auf | 6.2 |
-| Pipeline mit Test, Scan und Freigabe vor dem Deploy, Rollback als eigene Stufe | Ein kompromittiertes Tool gelangt nicht ungeprüft in Produktion | 6.2 |
+| Pipeline mit Test, Scan und Freigabe vor dem Deploy, Rollback als eigene Stufe | Pakete mit bekannten Schwachstellen werden vor dem Deploy gestoppt; vor Produktion steht eine manuelle Freigabe | 6.2 |
 
 ## Security
 

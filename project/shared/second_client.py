@@ -1,7 +1,9 @@
 """Zweiter Client für die Multi-Agent-Übung (Lab 3.3): zwei Agenten, ein Ticket.
 
+Simulierter Agent ohne LLM: ein festes Skript, das wie ein Agent liest, "überlegt" und schreibt.
 Liest ein Ticket, wartet (--hold Sekunden, simuliert Überlegen des Agenten) und ändert danach den
-Status mit der zuvor gelesenen Version. Gemeinsamer Zustand entsteht nur über die Mock-API:
+Status. Die zuvor gelesene Version sendet das Skript nur mit, wenn das Tool-Schema von
+update_ticket_status den Parameter expected_version enthält (also erst nach Aufgabe 1 von Lab 3.3). Gemeinsamer Zustand entsteht nur über die Mock-API:
   Terminal 1:  python shared/mock_api/app.py
   Terminal 2:  MOCK_API_URL=http://localhost:8001 python shared/second_client.py --name agent-a --hold 10 --status resolved
   Terminal 3:  MOCK_API_URL=http://localhost:8001 python shared/second_client.py --name agent-b --status in_progress
@@ -42,6 +44,7 @@ async def run(args) -> int:
             print(f"[{args.name}] überlegt {args.hold} s ...")
             time.sleep(args.hold)
         call_args = {"ticket_id": args.ticket, "status": args.status}
+        # Schema prüfen statt raten: Der Starter-Server kennt expected_version noch nicht.
         if "expected_version" in tools["update_ticket_status"].input_schema["properties"]:
             call_args["expected_version"] = ticket["version"]
         if "confirmed" in tools["update_ticket_status"].input_schema["properties"]:

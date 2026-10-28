@@ -1,20 +1,48 @@
-# Pipeline-Skizze – Starter (Lab 6.2, Teil 2)
+# Pipeline-Skizze – Starter (Lab 6.2, Teil B)
 # Kopieren nach playground/pipeline.yml. GitHub-Actions-Syntax; wird nicht ausgeführt, nur skizziert.
+# Gerüst der fünf Jobs ist vorgegeben (runs-on, checkout); zu ergänzen sind die markierten Schritte.
+# Vorlage für build und test: Theorie Lab 6.2, Abschnitt „Ausgearbeitetes Beispiel“.
 name: vantra-ops-mcp
 
 on:
   push:
     branches: [main]
 
+env:
+  IMAGE: ghcr.io/vantra-systems/vantra-ops-mcp   # Image-Name in der Registry (Beispiel)
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    # TODO(Aufgabe B1): outputs mit dem Tag ergänzen, damit deploy ihn lesen kann
     steps:
       - uses: actions/checkout@v4
-      # TODO(Aufgabe 1): Image bauen (docker build -f playground/Dockerfile .) und mit dem Commit-SHA taggen
+      # TODO(Aufgabe B1): Schritt mit id "meta", der tag=<erste 12 Zeichen von GITHUB_SHA> nach $GITHUB_OUTPUT schreibt,
+      #   danach: docker build -f playground/Dockerfile -t ${IMAGE}:<tag> .
 
-  # TODO(Aufgabe 2): Job test (pytest) ergänzen
-  # TODO(Aufgabe 3): Job scan ergänzen: Abhängigkeiten (pip-audit) und Image/Dateisystem (z. B. Trivy) prüfen.
-  #   Welcher Schritt verhindert, dass ein kompromittiertes Paket oder Tool in Produktion gelangt?
-  # TODO(Aufgabe 4): Job deploy ergänzen: manuelle Freigabe (environment), kubectl set image, kubectl rollout status
-  # TODO(Aufgabe 5): Job rollback ergänzen: läuft bei Fehlschlag von deploy und führt kubectl rollout undo aus
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # TODO(Aufgabe B2): Python 3.13 einrichten (actions/setup-python@v5), requirements.txt installieren, pytest -q
+
+  scan:
+    runs-on: ubuntu-latest
+    # TODO(Aufgabe B3): Reihenfolge festlegen: erst nach build und test (needs)
+    steps:
+      - uses: actions/checkout@v4
+      # TODO(Aufgabe B3): pip-audit auf requirements-server.txt, danach Trivy-Scan des Dateisystems
+      #   (aquasecurity/trivy-action, scan-type fs, severity CRITICAL,HIGH, exit-code "1").
+      #   Als Kommentar notieren: Welcher Schritt stoppt ein Paket mit bekannter Schwachstelle?
+
+  deploy:
+    runs-on: ubuntu-latest
+    # TODO(Aufgabe B4): nach build und scan (needs), nur auf main (if), mit Freigabe (environment: production)
+    steps:
+      - run: echo "TODO(Aufgabe B4) kubectl set image … und kubectl rollout status …"
+
+  rollback:
+    runs-on: ubuntu-latest
+    # TODO(Aufgabe B5): nur bei Fehlschlag von deploy (needs und if)
+    steps:
+      - run: echo "TODO(Aufgabe B5) kubectl rollout undo …"

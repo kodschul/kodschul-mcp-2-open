@@ -6,23 +6,25 @@ Schnellreferenz für Modul 3 (State vs. Memory, Kontextschema, Konflikte bei meh
 
 | Ort | Lebensdauer | Beispiel im Projekt |
 | --- | --- | --- |
-| Kontextfenster | ein Modellaufruf (Nachrichtenliste des Clients) | `messages` im Agent-Client |
+| Kontextfenster | ein Modellaufruf; der Client füllt es jedes Mal neu aus dem Verlauf (LLM ist zustandslos) | `messages` im Agent-Client |
 | Session-State | Serverprozess | `session` in `context.py` |
 | Memory (persistent) | über Sessions | im Kursprojekt nicht umgesetzt |
 | Geheimnisse, Tokens | nie im Prompt oder Memory | Umgebungsvariablen des Prozesses |
+
+> Das LLM sieht nur Tool-Ergebnisse und den Verlauf, nie direkt den Session-State.
 
 ## Kontextschema (`context.py`)
 
 | Syntax | Wirkung |
 | --- | --- |
-| `SESSION_SCHEMA = [{"feld": …, "quelle": …, "lebensdauer": …, "an_llm": …}]` | Schema als Daten: Feld, Quelle, Lebensdauer, Sichtbarkeit |
+| `SESSION_SCHEMA = [{"feld": …, "quelle": …, "lebensdauer": …, "sichtbar": …}]` | Schema als Daten: Feld, Quelle, Lebensdauer, Sichtbarkeit in der Resource |
 | `@dataclass class SessionContext` | Felder des Session-State |
 | `last_ticket: dict \| None = None` | ein Feld je Tool-Ergebnis |
 | `ticket_versions: dict[str, int] = field(default_factory=dict)` | veränderliches Feld mit Standardwert |
 | `session.remember_ticket(ticket)` | legt Ausschnitt `id, title, status, version` ab |
 | `session.remember_deployment(deployment)` | legt Ausschnitt `id, service, version, status` ab |
 | `session.resolve_ticket_id(explicit)` | explizite ID gewinnt, sonst `last_ticket["id"]`, sonst `None` |
-| `session.to_llm_view()` | nur die für das Modell sichtbaren Felder |
+| `session.to_view()` | sichtbarer Ausschnitt für die Resource `context://session` (erreicht das LLM nicht) |
 | `session.tool_calls += 1` | Zähler, nur im Server sichtbar |
 | `session = SessionContext()` | eine Instanz je Serverprozess |
 
@@ -35,7 +37,7 @@ Schnellreferenz für Modul 3 (State vs. Memory, Kontextschema, Konflikte bei meh
 | `raise ToolError("…")` | erwarteter Fehler; Text erreicht das Modell, Ergebnis `isError: true` |
 | `from mcp.server.mcpserver.exceptions import ToolError` | Importpfad (nicht aus `mcp.server.mcpserver`) |
 | `deployment["log"][-tail:]` | nur die letzten `tail` Zeilen zurückgeben |
-| `@mcp.resource("context://session", mime_type="application/json")` | Kontext als lesbare Resource |
+| `@mcp.resource("context://session", mime_type="application/json")` | Kontext als Ansicht für Menschen und Hosts; der Agent-Client lädt sie nicht |
 | `await client.read_resource("context://session")` | Resource im Client lesen (`.contents[0].text`) |
 
 ## Konflikterkennung
@@ -45,7 +47,7 @@ Schnellreferenz für Modul 3 (State vs. Memory, Kontextschema, Konflikte bei meh
 | `update_ticket_status(ticket_id, status, expected_version)` | Schreib-Tool mit zuvor gelesener Version |
 | `backend.update_ticket(ticket_id, status, expected_version)` | prüft die Version, erhöht sie bei Erfolg um 1 |
 | `except VersionConflict as exc` | `exc.expected`, `exc.current` |
-| `error_result("version_conflict", msg, ticket_id=…, expected_version=…, current_version=…)` | strukturierter Fehler mit `is_error=True` |
+| `error_result("version_conflict", msg, ticket_id=…, expected_version=…, current_version=…)` | strukturierter Fehler mit `is_error=True`; Felder per `structured_content` auswertbar (statt nur Text wie bei `ToolError`) |
 | Rückgabetyp `Any` | nötig, wenn ein Tool `dict` oder `CallToolResult` liefert |
 
 Fehlerergebnis:
@@ -69,7 +71,8 @@ Fehlerergebnis:
 | `python playground/context.py` | Kurztest des Kontexts (Starter-Selbsttest) |
 | `python shared/script_client.py --server playground/server.py` | Server und Tools auflisten |
 | `python shared/script_client.py --server playground/server.py --call get_deployment_log '{"ticket_id": "VAN-102", "tail": 2}'` | ein Tool aufrufen (jeder Aufruf = neuer Serverprozess, leerer State) |
-| `python shared/agent_client.py --server playground/server.py --replay` | Dialog in einem Prozess (Skript-Agent), Kontext bleibt erhalten |
+| `npx @modelcontextprotocol/inspector python playground/server.py` | mehrere Aufrufe in einer Session, Kontext bleibt erhalten; Resource im Tab „Resources“ |
+| `python shared/agent_client.py --server playground/server.py --replay` | Fallback: fertiges Prüfskript, ruft beide Tools in einem Prozess auf (erklärt in Lab 4.1) |
 | `python shared/mock_api/app.py` | Mock-API als gemeinsamer Zustand (Port 8001) |
 | `MOCK_API_URL=http://localhost:8001 python shared/second_client.py --server playground/server.py --name agent-a --hold 10 --status resolved` | Agent A: lesen, warten, schreiben |
 | `MOCK_API_URL=http://localhost:8001 python shared/second_client.py --server playground/server.py --name agent-b --status in_progress` | Agent B: lesen, sofort schreiben |
@@ -84,4 +87,6 @@ Fehlerergebnis:
 | beide Agenten melden `ok`, Änderung von B fehlt | Server ohne `expected_version` (Starter-Stand) |
 | kein Konflikt trotz zwei Clients | `MOCK_API_URL` fehlt: zwei Prozesse mit getrennten Daten |
 | Konflikt schon beim ersten Lauf | Daten nicht zurückgesetzt (Version > 3) |
+| `Lesen fehlgeschlagen: Error executing tool get_ticket` | Mock-API läuft nicht |
+| `get_deployment_log({})` im Inspector ohne Kontext | `remember_ticket` fehlt in `get_ticket` oder Inspector neu verbunden |
 | `InvalidSignature` beim Start | Rückgabetyp `dict \| CallToolResult` statt `Any` |

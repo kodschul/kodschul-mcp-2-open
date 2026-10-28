@@ -1,6 +1,7 @@
 # Starter Lab 6.2: Kubernetes-Manifest mit Lücken. Kopieren nach playground/k8s.yaml.
-# Validieren:  kubectl apply --dry-run=client --validate=false -f playground/k8s.yaml  (braucht je nach Version einen erreichbaren Cluster)
-#              oder kubeconform -strict -summary playground/k8s.yaml
+# Validieren (ohne Cluster):  kubeconform -strict -summary playground/k8s.yaml
+# Ressourcen zählen:          python -c "import yaml; print([d['kind'] for d in yaml.safe_load_all(open('playground/k8s.yaml')) if d])"
+# Vorlage für alle Lücken: Theorie Lab 6.2, Abschnitte „Deployment“ und „Service“. Einrückung: zwei Leerzeichen je Ebene, keine Tabs.
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -10,7 +11,8 @@ data:
   MCP_TRANSPORT: streamable-http
   MCP_HOST: 0.0.0.0
   MCP_PORT: "8000"
-  # TODO(Aufgabe 1): MOCK_API_URL und TOOL_CALL_LOG (/data/tool_calls.jsonl) ergänzen; Rolle viewer als Standard
+  # TODO(Aufgabe 1): MOCK_API_URL (Service vantra-mock-api, Port 8001) und TOOL_CALL_LOG (/data/tool_calls.jsonl) ergänzen;
+  #   VANTRA_ROLE: viewer (vorbereitet, wirkt ab Lab 7.1). Werte als Text, Zahlen in Anführungszeichen.
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -38,9 +40,88 @@ spec:
             - configMapRef:
                 name: vantra-ops-config
           # TODO(Aufgabe 2): Secret per secretKeyRef einbinden (Secret vantra-ops-secrets, Schlüssel MOCK_API_TOKEN, optional)
+          #   Form: env: - name: … valueFrom: secretKeyRef: name/key/optional
           # TODO(Aufgabe 3): readinessProbe und livenessProbe auf GET /health (Port mcp) ergänzen
+          #   Form je Probe: httpGet (path, port), periodSeconds, failureThreshold; Liveness seltener als Readiness.
+          #   Vorbild: readinessProbe/livenessProbe der Mock-API weiter unten in dieser Datei
           # TODO(Aufgabe 4): securityContext: nicht als root, keine Rechteausweitung, Dateisystem schreibgeschützt;
-          #   dafür emptyDir auf /data mounten
-          # TODO(Aufgabe 5): resources (requests und limits) setzen
+          #   dafür emptyDir auf /data mounten. Drei Stellen: securityContext unter spec (Pod: runAsNonRoot, runAsUser),
+          #   securityContext + volumeMounts im Container, volumes unter spec. Vorbild: Mock-API unten
+          # TODO(Aufgabe 5): resources (requests und limits) für cpu und memory setzen
+          #   Einheiten: cpu in Milli-Kernen (100m = 0,1 Kern), memory in Mi (128Mi). Vorbild: Mock-API unten
 ---
 # TODO(Aufgabe 6): Service vom Typ ClusterIP für app=vantra-ops-mcp auf Port 8000 ergänzen
+---
+# Vorgegeben (keine Aufgabe): Mock-API, auf die MOCK_API_URL zeigt.
+# Ohne diesen Dienst antwortet /health, Tool-Aufrufe schlagen aber fehl.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vantra-mock-api
+  labels:
+    app: vantra-mock-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vantra-mock-api
+  template:
+    metadata:
+      labels:
+        app: vantra-mock-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mock-api
+          image: vantra-ops-mcp:1.0.0
+          imagePullPolicy: IfNotPresent
+          command: ["python", "shared/mock_api/app.py"]
+          env:
+            - name: MOCK_API_HOST
+              value: 0.0.0.0
+            - name: MOCK_API_PORT
+              value: "8001"
+          ports:
+            - name: api
+              containerPort: 8001
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vantra-mock-api
+  labels:
+    app: vantra-mock-api
+spec:
+  type: ClusterIP
+  selector:
+    app: vantra-mock-api
+  ports:
+    - name: api
+      port: 8001
+      targetPort: api

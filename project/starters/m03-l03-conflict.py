@@ -22,7 +22,7 @@ from mcp.types import CallToolResult, TextContent, ToolAnnotations
 
 from context import SESSION_SCHEMA, session
 from shared.mock_api.client import get_backend
-from shared.mock_api.store import InvalidStatus, NotFound, VersionConflict  # noqa: F401  (VersionConflict wird in Aufgabe 2 gebraucht)
+from shared.mock_api.store import InvalidStatus, NotFound, VersionConflict  # noqa: F401  (VersionConflict wird in Aufgabe 3 gebraucht)
 
 mcp = MCPServer(
     "vantra-ops",
@@ -34,7 +34,10 @@ WRITE = ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent
 
 
 def error_result(code: str, message: str, **details) -> CallToolResult:
-    """Strukturierter Tool-Fehler: Code, Meldung und Details als JSON (is_error=True)."""
+    """Strukturierter Tool-Fehler: Code, Meldung und Details als JSON (is_error=True).
+
+    Anders als ToolError (nur Text) trägt das Ergebnis maschinenlesbare Felder wie current_version.
+    """
     payload = {"error": code, "message": message, **details}
     return CallToolResult(
         content=[TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))],
@@ -82,11 +85,17 @@ def update_ticket_status(ticket_id: str, status: str) -> Any:
         raise ToolError(str(exc)) from exc
     except InvalidStatus as exc:
         return error_result("invalid_status", str(exc), ticket_id=ticket_id)
-    # TODO(Aufgabe 3): VersionConflict abfangen und error_result("version_conflict", ...) mit
-    #   ticket_id, expected_version und current_version zurückgeben (exc.expected, exc.current)
+    # TODO(Aufgabe 3): VersionConflict abfangen. Vorlage: Kommentarzeichen entfernen (Einrückung wie bei
+    #   "except InvalidStatus") und die Meldung formulieren: was ist passiert, was soll der Agent jetzt tun?
+    # except VersionConflict as exc:
+    #     return error_result(
+    #         "version_conflict",
+    #         "<Meldung für den Agenten>",
+    #         ticket_id=ticket_id, expected_version=exc.expected, current_version=exc.current,
+    #     )
     session.remember_ticket(ticket)
     return ticket
-# TODO(Aufgabe 4, Erweiterung): Zusammenführungsstrategie: bei Konflikt nur ändern, wenn der gewünschte Status
+# TODO(Erweiterung): Zusammenführungsstrategie: bei Konflikt nur ändern, wenn der gewünschte Status
 #   dem aktuellen Status entspricht (idempotent), sonst Konflikt melden
 
 
@@ -101,8 +110,8 @@ def ticket_resource(ticket_id: str) -> dict:
 
 @mcp.resource("context://session", mime_type="application/json")
 def session_context() -> dict:
-    """Sichtbarer Ausschnitt des Session-Kontexts und das Schema dahinter."""
-    return {"schema": SESSION_SCHEMA, "aktuell": session.to_llm_view()}
+    """Ansicht des Session-Kontexts für Menschen und Hosts (der Agent-Client lädt sie nicht ins LLM)."""
+    return {"schema": SESSION_SCHEMA, "aktuell": session.to_view()}
 
 
 if __name__ == "__main__":

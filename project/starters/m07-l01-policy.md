@@ -32,4 +32,4 @@ TODO(Aufgabe 4): Woran wird ein kompromittierter Client erkannt (Protokollierung
 
 ## Offene Punkte
 
-- TODO(Aufgabe 5, Erweiterung): Was ist bewusst noch nicht geregelt?
+- TODO(Erweiterung): Was ist bewusst noch nicht geregelt?

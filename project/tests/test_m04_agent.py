@@ -138,7 +138,7 @@ async def test_example_agent_script_runs_with_replay():
 
     from conftest import EX
 
-    script = EX / "m04-agent-prototype/l01-agent-client-connection/agent.py"
+    script = EX / "m04-agent-prototype/l01-agent-client/agent.py"
     done = subprocess.run([sys.executable, str(script), "--replay"], capture_output=True, text=True, timeout=60)
     assert done.returncode == 0, done.stderr
     assert "Tool-Call: get_ticket" in done.stdout and "Tool-Call: get_deployment_log" in done.stdout

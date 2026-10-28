@@ -87,8 +87,8 @@ async def test_two_agents_conflict_over_shared_mock_api(mock_api):
 def test_second_client_script_reports_conflict(mock_api):
     env = {"MOCK_API_URL": mock_api, "PATH": "/usr/bin:/bin"}
     base = [sys.executable, str(PROJECT / "shared/second_client.py"), "--server", str(SRV_CONFLICT)]
-    slow = subprocess.Popen(base + ["--name", "agent-a", "--hold", "4", "--status", "resolved"], env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
-    fast = subprocess.run(base + ["--name", "agent-b", "--status", "in_progress"], env=env, capture_output=True, text=True, timeout=60)
-    out_a, _ = slow.communicate(timeout=60)
+    slow = subprocess.Popen(base + ["--name", "agent-a", "--hold", "10", "--status", "resolved"], env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    fast = subprocess.run(base + ["--name", "agent-b", "--status", "in_progress"], env=env, capture_output=True, text=True, timeout=90)
+    out_a, _ = slow.communicate(timeout=90)
     assert fast.returncode == 0, fast.stdout
     assert slow.returncode == 2 and "version_conflict" in out_a

@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 
 from conftest import EX, SRV_CAPSTONE, SRV_LOGGING, connect, json_of
 
-LOGGING_DIR = EX / "m08-observability-and-capstone/l01-monitoring-setup"
+LOGGING_DIR = EX / "m08-observability-and-capstone/l01-monitoring"
 
 
 def _logging_config():
@@ -135,6 +135,6 @@ async def test_capstone_workflow_viewer_vs_operator(tmp_path):
 
 def test_capstone_demo_script_runs(tmp_path):
     env = {**os.environ, "TOOL_CALL_LOG": str(tmp_path / "demo.jsonl")}
-    done = subprocess.run([sys.executable, str(EX / "m08-observability-and-capstone/l02-capstone-integration/run_demo.py")], capture_output=True, text=True, timeout=180, env=env)
+    done = subprocess.run([sys.executable, str(EX / "m08-observability-and-capstone/l02-capstone/run_demo.py")], capture_output=True, text=True, timeout=180, env=env)
     assert done.returncode == 0, done.stderr
     assert "policy_denied" in done.stdout and "confirmation_required" in done.stdout and "Status in_progress" in done.stdout

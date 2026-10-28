@@ -30,7 +30,7 @@ Nicht protokollieren: Ticket-Texte, Log-Inhalte, Secrets, Tokens, `confirmed`. s
 | `@logged("<tool>")` | unter `@mcp.tool(...)`: misst Dauer, schreibt JSONL-Zeile und Log-Zeile, auch bei Fehlern |
 | `log_tool_call(record)` | hängt eine JSON-Zeile an `TOOL_CALL_LOG` an |
 | `ALERT_RULES` | Liste von `{name, status, schwelle, fenster_s, schwere}` |
-| `evaluate_alerts(records)` | liefert ausgelöste Regeln (Beispielstand `examples/m08-…/l01-monitoring-setup/logging_config.py`) |
+| `evaluate_alerts(records)` | liefert ausgelöste Regeln (Beispielstand `examples/m08-…/l01-monitoring/logging_config.py`) |
 
 Standardregeln: `viele-abgelehnte-aufrufe` (`denied`, 3 in 60 s, hoch) und `viele-fehler` (`error`, 5 in 300 s, mittel).
 
@@ -40,7 +40,7 @@ Standardregeln: `viele-abgelehnte-aufrufe` (`denied`, 3 in 60 s, hoch) und `viel
 | --- | --- |
 | `TOOL_CALL_LOG=logs/tool_calls.jsonl python shared/agent_client.py --server playground/server.py --replay workflow --role viewer --confirm yes` | Workflow ausführen und Protokoll schreiben |
 | `cat logs/tool_calls.jsonl` | Protokoll ansehen |
-| `python examples/m08-observability-and-capstone/l01-monitoring-setup/logging_config.py` | Alarmregeln gegen das Protokoll prüfen (Ausgabe `{'regel': 'keine Alarme'}` ohne Treffer) |
+| `python examples/m08-observability-and-capstone/l01-monitoring/logging_config.py` | Alarmregeln gegen das Protokoll prüfen (Ausgabe `{'regel': 'keine Alarme'}` ohne Treffer) |
 | `TOOL_CALL_LOG=logs/tool_calls.jsonl python shared/dashboard/server.py` | Dashboard auf http://localhost:8080 |
 | `curl localhost:8080/api/calls` | JSON mit `summary` und `calls` |
 | `grep -c -E "description\|confirmed" logs/tool_calls.jsonl` | Datenschutzprüfung (Ausgabe `0`) |
@@ -59,11 +59,14 @@ Banner: mindestens 3 `denied` in den letzten 60 Sekunden (im Dashboard fest eing
 
 | Befehl | Wirkung |
 | --- | --- |
-| `python examples/m08-observability-and-capstone/l02-capstone-integration/run_demo.py` | Workflow ohne Container: `viewer`, `operator` mit Bestätigung, `operator` ohne Bestätigung |
-| `docker compose -f playground/docker-compose.yml up --build` | Stack mit Rolle `viewer` |
-| `VANTRA_ROLE=operator docker compose -f playground/docker-compose.yml up --build` | Stack mit Rolle `operator` |
+| `python examples/m08-observability-and-capstone/l02-capstone/run_demo.py` | Workflow ohne Container: `viewer`, `operator` mit Bestätigung, `operator` ohne Bestätigung |
+| `export COMPOSE=examples/m06-containerization-cicd/l01-docker/docker-compose.yml` | Compose-Datei mit Server, Mock-API und Dashboard (baut `playground/`); in jedem Terminal nötig |
+| `docker compose -f "$COMPOSE" up -d --build` | Stack mit Rolle `viewer` im Hintergrund starten |
+| `VANTRA_ROLE=operator docker compose -f "$COMPOSE" up -d` | Rolle auf `operator` wechseln (nur `mcp-server` wird neu erzeugt) |
+| `docker compose -f "$COMPOSE" logs -f mcp-server` | Server-Logs verfolgen |
+| `docker compose -f "$COMPOSE" exec mcp-server printenv VANTRA_ROLE` | aktive Rolle prüfen |
 | `python shared/agent_client.py --url http://localhost:8000/mcp --replay workflow --confirm yes` | Workflow gegen den Container |
-| `docker compose -f playground/docker-compose.yml down` | Stack stoppen |
+| `docker compose -f "$COMPOSE" down` | Stack stoppen |
 | `curl -X POST http://localhost:8001/reset` | Mock-Daten zurücksetzen |
 
 | Schritt | Rolle `viewer` | Rolle `operator`, `--confirm yes` | Rolle `operator`, `--confirm none` |

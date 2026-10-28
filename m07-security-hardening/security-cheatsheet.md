@@ -33,7 +33,9 @@ Standardrolle: `viewer`. Unbekannte Rolle oder unbekanntes Tool: `policy_denied`
 | `--role viewer` / `--role operator` | Rolle des lokalen Servers wählen (ab Lab 7.1) |
 | `--confirm ask` / `yes` / `no` / `none` | Bestätigung im Agent-Client: Nutzer fragen / automatisch ja / automatisch nein (Client meldet `user_declined`, kein Serveraufruf) / `confirmed` nie senden (der Server entscheidet) |
 
-Server für Showcase C: ohne Policy `examples/m03-context-and-state/l03-multi-agent-sync/server.py`, mit Policy `examples/m07-security-hardening/l01-access-control-sandboxing/server.py`.
+`confirmed` sieht das Modell nie: `shared/agent_client.py` entfernt es aus dem Tool-Schema (`HIDDEN_ARGS`) und aus jedem Tool-Call des Modells; erst nach Zustimmung setzt der Host `confirmed=true`.
+
+Server für Showcase C: ohne Policy `examples/m03-context-and-state/l03-multi-agent/server.py`, mit Policy `examples/m07-security-hardening/l01-access-control/server.py`.
 
 ## Aufbau einer Zugriffsrichtlinie
 
@@ -46,7 +48,7 @@ Server für Showcase C: ohne Policy `examples/m03-context-and-state/l03-multi-ag
 | Erkennung und Reaktion | Protokoll, Auffälligkeiten, Reaktion |
 | Offene Punkte | bewusst nicht Geregeltes |
 
-Vorlage: `shared/policy-template.md`. Beispiel: `examples/m07-security-hardening/l01-access-control-sandboxing/policy.md`.
+Vorlage: `shared/policy-template.md`. Beispiel: `examples/m07-security-hardening/l01-access-control/policy.md`.
 
 ## Angriffe und Verteidigungslinien
 

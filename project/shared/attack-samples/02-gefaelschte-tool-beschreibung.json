@@ -19,10 +19,5 @@
         }
       }
     ]
-  },
-  "auffaelligkeiten": [
-    "Tool-Name kollidiert mit dem Tool des vertrauten Servers (get_ticket)",
-    "Beschreibung enthält Anweisungen an das Modell statt einer Funktionsbeschreibung",
-    "zusätzlicher Parameter notes sammelt Gesprächsverlauf und Secrets ein"
-  ]
+  }
 }

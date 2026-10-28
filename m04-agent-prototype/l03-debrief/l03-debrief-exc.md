@@ -4,11 +4,11 @@
 **Ändert die Vantra-Projektbasis?** Nein — Auswertung des Testlaufs; die Liste ordnet Tag 2.
 **Arbeitsdatei:** `playground/debrief.md`
 **Starter:** keiner (Eingabe: `playground/testlauf.md` aus Lab 4.2)
-**Beispiel zum Vergleich:** `examples/m04-agent-prototype/l02-end-to-end-testrun/testdialog.md` (Beobachtungen)
+**Beispiel zum Vergleich:** `examples/m04-agent-prototype/l02-testrun/testdialog.md` (Beobachtungen)
 
 ## Vorbereitung
 
-- `playground/testlauf.md` aus Lab 4.2 liegt vor. Fehlt sie, dient `examples/m04-agent-prototype/l02-end-to-end-testrun/testdialog.md` als Eingabe.
+- `playground/testlauf.md` aus Lab 4.2 liegt vor. Fehlt sie, dient `examples/m04-agent-prototype/l02-testrun/testdialog.md` als Eingabe.
 - Leere Datei `playground/debrief.md` anlegen.
 
 ## Aufgaben
@@ -20,7 +20,7 @@
    | --- | --- | --- | --- | --- | --- |
    ```
 
-2. Bewerte Schaden und Wahrscheinlichkeit je Zeile mit hoch, mittel oder niedrig. Begründe jede Einstufung „hoch“ in einem Halbsatz.
+2. Bewerte Schaden und Wahrscheinlichkeit je Zeile mit hoch, mittel oder niedrig; nutze die beiden Bewertungsraster der Theorie. Begründe jede Einstufung „hoch“ in einem Halbsatz. Ergänze Risiken ohne Beleg im Testlauf nur mit dem Vermerk „Annahme“ in der Spalte „Beleg“.
 3. Ordne jeder Zeile den Baustein zu: Absicherung, Betrieb oder Monitoring.
 4. Vergib Rang 1 bis 3 an die drei wichtigsten Zeilen. Schaden zählt vor Wahrscheinlichkeit.
 5. Beantworte unter der Tabelle in zwei Sätzen: Welches Risiko wäre in einer echten Vantra-Umgebung am kritischsten, und was braucht der Prototyp zuerst?
@@ -35,7 +35,7 @@
 ## Abschlusskriterien
 
 - `playground/debrief.md` enthält die priorisierte Tabelle und den Entscheidungssatz.
-- Jedes Risiko stützt sich auf eine Beobachtung aus Lab 4.2.
+- Jedes Risiko stützt sich auf eine Beobachtung aus Lab 4.2 oder ist in der Spalte „Beleg“ als „Annahme“ markiert.
 
 ## Erweiterung (optional)
 
@@ -43,4 +43,4 @@ Wechsle die Perspektive: Ordne die Risiken aus Sicht einer Betriebsrolle und ein
 
 ## Fallback
 
-Fehlt `playground/testlauf.md`, genügen die Beobachtungen aus `examples/m04-agent-prototype/l02-end-to-end-testrun/testdialog.md`. Ohne Plenum entfällt Aufgabe 6; die Rangfolge bleibt eine begründete Einzelentscheidung.
+Fehlt `playground/testlauf.md`, genügen die Beobachtungen aus `examples/m04-agent-prototype/l02-testrun/testdialog.md`. Ohne Plenum entfällt Aufgabe 6; die Rangfolge bleibt eine begründete Einzelentscheidung.

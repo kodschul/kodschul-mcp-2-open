@@ -4,11 +4,11 @@ Ein Python-Projekt mit dem MCP-Server und Agent-Client des Kurses, den fertigen 
 
 ## Start
 
-Voraussetzung: Python ≥ 3.11 (verifiziert mit 3.13), für den MCP Inspector Node.js mit `npx`, für Modul 6 Docker. Alle Befehle laufen im Projektordner (`output/project`).
+Voraussetzung: Python ≥ 3.11 (verifiziert mit 3.13), für den MCP Inspector Node.js mit `npx`, für Modul 6 Docker. Alle Befehle sind Bash-Befehle (Windows: Git Bash) und laufen im Projektordner (`output/project`). Einrichtung Schritt für Schritt: [`../00-setup-and-installation.md`](../00-setup-and-installation.md).
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate            # Windows: .venv\Scripts\activate
+source .venv/bin/activate            # Windows (Git Bash): source .venv/Scripts/activate
 pip install -r requirements.txt
 cp .env.example .env                 # LLM-Backend und Ports, siehe Abschnitt .env
 pytest -q                            # alle Tests, kein LLM nötig
@@ -88,7 +88,7 @@ project/
 | Ordner | Regel |
 | --- | --- |
 | `examples/` | Jeder Stand enthält alle Dateien, die er braucht (z. B. `context.py` neben `server.py`), und baut auf dem vorigen auf |
-| `starters/` | Starter nach `playground/` kopieren (Zielname steht im Kopf der Datei); Lücken sind mit `TODO(Aufgabe n)` markiert. Starter laufen bis zur Lücke oder brechen mit einer klaren Meldung ab |
+| `starters/` | Starter nach `playground/` kopieren (Zielname steht im Kopf der Datei); Lücken sind mit `TODO(Aufgabe n)` markiert; `n` ist die Aufgabennummer im `-exc.md`, optionale Teile tragen `TODO(Erweiterung)`. Starter laufen bis zur Lücke oder brechen mit einer klaren Meldung ab |
 | `playground/` | Arbeitsbereich von Trainer und Teilnehmenden; `server.py` und Hilfsdateien liegen hier |
 | `shared/` | gemeinsame Hilfsmittel; die Server importieren `shared/mock_api` (Pfad wird beim Start automatisch ergänzt) |
 
@@ -99,29 +99,29 @@ Pfade relativ zu `output/project/`. `–` bedeutet: kein Projektcode (nur Handou
 | Lab | Beispiel (`examples/…`) | Starter (`starters/…`) | Ergebnis |
 | --- | ----------------------- | ---------------------- | -------- |
 | 1.1 | – | – | Vergleichstabelle (Handout) |
-| 1.2 | `m01-mcp-foundations-and-setup/l02-dev-setup-first-server/server.py` | `m01-l02-first-server.py` | leerer MCP-Server läuft, Client verbunden |
+| 1.2 | `m01-mcp-foundations-and-setup/l02-dev-setup/server.py` | `m01-l02-first-server.py` | leerer MCP-Server läuft, Client verbunden |
 | 1.3 | – | – | Architekturdiagramm des eigenen Setups (Handout) |
-| 2.1 | `m02-protocol-and-messages/l01-jsonrpc-live/` (Request-Skripte) | `m02-l01-raw-requests.py` | protokollierter Request/Response |
+| 2.1 | `m02-protocol-and-messages/l01-jsonrpc/` (`raw_requests.py`) | `m02-l01-raw-requests.py` | protokollierter Request/Response am eigenen, leeren Server |
 | 2.2 | `m02-protocol-and-messages/l02-first-tool/server.py` | `m02-l02-first-tool.py` | Tool „Ticket abfragen“ |
 | 2.3 | – (nutzt Beispiel 2.2) | – | dokumentierter Fehlerfall |
 | 3.1 | – | – | Entscheidungstabelle State/Memory |
-| 3.2 | `m03-context-and-state/l02-context-schema-implementation/` (`server.py`, `context.py`) | `m03-l02-context.py` | Kontextschema + Tool „Deployment-Log“ |
-| 3.3 | `m03-context-and-state/l03-multi-agent-sync/server.py` | `m03-l03-conflict.py` | Server erkennt Konflikt zweier Clients |
-| 4.1 | `m04-agent-prototype/l01-agent-client-connection/` | `m04-l01-agent-client.py` | Agent ruft beide Tools per Sprache auf |
-| 4.2 | `m04-agent-prototype/l02-end-to-end-testrun/` (Testdialog, Log) | `m04-l02-testrun.md` | dokumentierter Testlauf |
+| 3.2 | `m03-context-and-state/l02-context-schema/` (`server.py`, `context.py`) | `m03-l02-context.py` | Kontextschema + Tool „Deployment-Log“ |
+| 3.3 | `m03-context-and-state/l03-multi-agent/server.py` | `m03-l03-conflict.py` | Server erkennt Konflikt zweier Clients |
+| 4.1 | `m04-agent-prototype/l01-agent-client/` | `m04-l01-agent-client.py` | Agent ruft beide Tools per Sprache auf |
+| 4.2 | `m04-agent-prototype/l02-testrun/` (Testdialog, Log) | `m04-l02-testrun.md` | dokumentierter Testlauf |
 | 4.3 | – | – | Risikoliste |
 | 5.1 | – | – | Platzierungsentscheidung |
 | 5.2 | `m05-cloud-integration/l02-container-prep/Dockerfile` | `m05-l02-Dockerfile` | baufähiges Dockerfile |
-| 6.1 | `m06-containerization-cicd/l01-build-and-run/` (`docker-compose.yml`) | `m06-l01-compose.yml` | Server im Container, Agent verbunden |
-| 6.2 | `m06-containerization-cicd/l02-orchestration-cicd/` (`k8s.yaml`, `pipeline.yml`) | `m06-l02-k8s.yaml` | validiertes Manifest + Pipeline-Skizze |
-| 7.1 | `m07-security-hardening/l01-access-control-sandboxing/` (`policy.md`, `auth.py`) | `m07-l01-policy.md` | Zugriffsrichtlinie, durchgesetzt im Server |
+| 6.1 | `m06-containerization-cicd/l01-docker/` (`docker-compose.yml`) | `m06-l01-compose.yml` | Server im Container, Agent verbunden |
+| 6.2 | `m06-containerization-cicd/l02-kubernetes-cicd/` (`k8s.yaml`, `pipeline.yml`) | `m06-l02-k8s.yaml` | validiertes Manifest + Pipeline-Skizze |
+| 7.1 | `m07-security-hardening/l01-access-control/` (`policy.md`, `auth.py`) | `m07-l01-policy.md` | Zugriffsrichtlinie, durchgesetzt im Server |
 | 7.2 | – (nutzt `shared/attack-samples/`, Showcase C) | – | Tabelle Angriff · Gegenmaßnahme · Verteidigungslinie |
 | 7.3 | `m07-security-hardening/l03-security-review/` (Checkliste, Beispielbefunde) | `m07-l03-checklist.md` | Review-Befunde |
-| 8.1 | `m08-observability-and-capstone/l01-monitoring-setup/` (`logging_config.py`) | `m08-l01-logging.py` | strukturierte Logs + Beispielalarm |
-| 8.2 | `m08-observability-and-capstone/l02-capstone-integration/` (kompletter Stand) | `m08-l02-capstone.md` | End-to-End-Demo des gesicherten Agenten |
+| 8.1 | `m08-observability-and-capstone/l01-monitoring/` (`logging_config.py`) | `m08-l01-logging.py` | strukturierte Logs + Beispielalarm |
+| 8.2 | `m08-observability-and-capstone/l02-capstone/` (kompletter Stand) | `m08-l02-capstone.md` | End-to-End-Demo des gesicherten Agenten |
 | 8.3 | – | – | priorisierte Trendliste (Handout) |
 
-Zusätzliche Dateien gegenüber der Tabelle (jeweils im selben Ordner bzw. in `starters/`): in 2.1 `raw_requests.py`; in 2.2 `error_cases.py` (Fehlerfälle für Lab 2.3); in 4.1 `agent.py`, `server.py`, `context.py`; in 4.2 `testdialog.md`, `testlauf.log`; in 5.2 zusätzlich `server.py` und `context.py` (Container-Variante mit Umgebungskonfiguration und `/health`); in 7.1 `server.py`, `context.py`; in 7.3 `flawed/Dockerfile`, `flawed/policy.md` (Trainer-Konfiguration mit Fehlern); in 8.1 `server.py` und Kopien der Vorgänger; in 8.2 alle Dateien des Gesamtstands plus `run_demo.py`. Zusätzliche Starter: `m06-l02-pipeline.yml`, `m07-l01-auth.py`.
+Zusätzliche Dateien gegenüber der Tabelle (jeweils im selben Ordner bzw. in `starters/`): in 2.1 `raw_requests.py` (gegen den leeren Server aus 1.2); in 2.2 `raw_requests.py` (Stand 2.1 plus `tools/call`, Lab 2.2 Aufgabe 6 und Lab 2.3 Aufgabe 5) und `error_cases.py` (Fehlerfälle für Lab 2.3); in 4.1 `agent.py`, `server.py`, `context.py`; in 4.2 `testdialog.md`, `testlauf.log`; in 5.2 zusätzlich `server.py` und `context.py` (Container-Variante mit Umgebungskonfiguration und `/health`); in 7.1 `server.py`, `context.py`; in 7.3 `flawed/Dockerfile`, `flawed/policy.md` (Trainer-Konfiguration mit Fehlern); in 8.1 `server.py` und Kopien der Vorgänger; in 8.2 alle Dateien des Gesamtstands plus `run_demo.py`. Zusätzliche Starter: `m06-l02-pipeline.yml` (Job-Gerüste vorgegeben, Lücken als `TODO(Aufgabe B1)` bis `TODO(Aufgabe B5)`; Policy-Tests in der Pipeline nur als Hinweis „ab Lab 7.1“), `m07-l01-auth.py`.
 
 **Reihenfolge der Projektstände:** 1.2 → 2.2 → 3.2 → 3.3 → 4.1 (Prototyp, Checkpoint Ende Tag 1) → 5.2 → 6.1 → 6.2 → 7.1 (Checkpoint Ende m07) → 8.1 → 8.2.
 
@@ -131,22 +131,23 @@ Alle Beispiel-Server laufen über stdio; Pfad des Servers ersetzen durch `playgr
 
 | Stufe | Befehl |
 | --- | --- |
-| 1.2 | `python shared/script_client.py --server examples/m01-mcp-foundations-and-setup/l02-dev-setup-first-server/server.py` (Tools: keine) |
-| 2.1 | `python examples/m02-protocol-and-messages/l01-jsonrpc-live/raw_requests.py` (rohe JSON-RPC-Zeilen gegen Server 2.2) |
+| 1.2 | `python shared/script_client.py --server examples/m01-mcp-foundations-and-setup/l02-dev-setup/server.py` (Tools: keine) |
+| 2.1 | `python examples/m02-protocol-and-messages/l01-jsonrpc/raw_requests.py` (rohe JSON-RPC-Zeilen gegen den leeren Server aus 1.2) |
+| 2.2 (roh) | `python examples/m02-protocol-and-messages/l02-first-tool/raw_requests.py` (wie 2.1 plus `tools/call` gegen Server 2.2) |
 | 2.2 | `python shared/script_client.py --server examples/m02-protocol-and-messages/l02-first-tool/server.py --call get_ticket '{"ticket_id": "VAN-102"}'` |
 | 2.3 | `python examples/m02-protocol-and-messages/l02-first-tool/error_cases.py` |
-| 3.2 | `python shared/script_client.py --server examples/m03-context-and-state/l02-context-schema-implementation/server.py --call get_deployment_log '{"ticket_id": "VAN-102"}'` |
+| 3.2 | `python shared/script_client.py --server examples/m03-context-and-state/l02-context-schema/server.py --call get_deployment_log '{"ticket_id": "VAN-102"}'` |
 | 3.3 | siehe „Multi-Agent-Konflikt“ unten |
-| 4.1 | `python examples/m04-agent-prototype/l01-agent-client-connection/agent.py --replay` oder `python shared/agent_client.py --server examples/m04-agent-prototype/l01-agent-client-connection/server.py [--replay]` |
-| 4.2 | `python shared/agent_client.py --server examples/m04-agent-prototype/l01-agent-client-connection/server.py --replay` (Beispiellog: `testlauf.log`) |
+| 4.1 | `python examples/m04-agent-prototype/l01-agent-client/agent.py --replay` oder `python shared/agent_client.py --server examples/m04-agent-prototype/l01-agent-client/server.py [--replay]` |
+| 4.2 | `python shared/agent_client.py --server examples/m04-agent-prototype/l01-agent-client/server.py --replay` (Beispiellog: `testlauf.log`) |
 | 5.2 | `docker build -f examples/m05-cloud-integration/l02-container-prep/Dockerfile --build-arg APP_DIR=examples/m05-cloud-integration/l02-container-prep -t vantra-ops-mcp:local .` |
-| 6.1 | `APP_DIR=examples/m05-cloud-integration/l02-container-prep docker compose -f examples/m06-containerization-cicd/l01-build-and-run/docker-compose.yml up --build`, dann `python shared/agent_client.py --url http://localhost:8000/mcp --replay` |
-| 6.2 | `kubeconform -strict -summary examples/m06-containerization-cicd/l02-orchestration-cicd/k8s.yaml` bzw. `kubectl apply --dry-run=client -f …` (braucht je nach Version einen erreichbaren Cluster) |
-| 7.1 | `python shared/script_client.py --server examples/m07-security-hardening/l01-access-control-sandboxing/server.py --role operator --call update_ticket_status '{"ticket_id": "VAN-101", "status": "closed", "expected_version": 1}'` |
+| 6.1 | `APP_DIR=examples/m05-cloud-integration/l02-container-prep docker compose -f examples/m06-containerization-cicd/l01-docker/docker-compose.yml up --build`, dann `python shared/agent_client.py --url http://localhost:8000/mcp --replay` |
+| 6.2 | `kubeconform -strict -summary examples/m06-containerization-cicd/l02-kubernetes-cicd/k8s.yaml` bzw. `kubectl apply --dry-run=client -f …` (braucht je nach Version einen erreichbaren Cluster) |
+| 7.1 | `python shared/script_client.py --server examples/m07-security-hardening/l01-access-control/server.py --role operator --call update_ticket_status '{"ticket_id": "VAN-101", "status": "closed", "expected_version": 1}'` |
 | 7.2 | Showcase C, siehe unten |
 | 7.3 | `examples/m07-security-hardening/l03-security-review/flawed/` gegen `checklist.md` prüfen |
-| 8.1 | `TOOL_CALL_LOG=logs/tool_calls.jsonl python shared/agent_client.py --server examples/m08-observability-and-capstone/l01-monitoring-setup/server.py --replay`, dann `python examples/m08-observability-and-capstone/l01-monitoring-setup/logging_config.py` (Alarmprüfung) und `TOOL_CALL_LOG=logs/tool_calls.jsonl python shared/dashboard/server.py` |
-| 8.2 | `python examples/m08-observability-and-capstone/l02-capstone-integration/run_demo.py` oder Container: `VANTRA_ROLE=operator docker compose -f examples/m08-observability-and-capstone/l02-capstone-integration/docker-compose.yml up --build` |
+| 8.1 | `TOOL_CALL_LOG=logs/tool_calls.jsonl python shared/agent_client.py --server examples/m08-observability-and-capstone/l01-monitoring/server.py --replay`, dann `python examples/m08-observability-and-capstone/l01-monitoring/logging_config.py` (Alarmprüfung) und `TOOL_CALL_LOG=logs/tool_calls.jsonl python shared/dashboard/server.py` |
+| 8.2 | `python examples/m08-observability-and-capstone/l02-capstone/run_demo.py` oder Container: `VANTRA_ROLE=operator docker compose -f examples/m08-observability-and-capstone/l02-capstone/docker-compose.yml up --build` |
 
 `APP_DIR` wählt in Dockerfile und Compose den Server-Stand (Standard: `playground`, im 8.2-Beispiel der Ordner des Beispiels). Der Build-Kontext ist immer der Projektordner.
 
@@ -167,8 +168,8 @@ Mit Versionsprüfung (Beispiel 3.3) endet Agent A mit `version_conflict` (erwart
 | Showcase | Befehle |
 | --- | --- |
 | A Live-Trace (m02-l01) | Agent mit Proxy: `python shared/agent_client.py --server playground/server.py --replay --trace trace.log`; die JSON-RPC-Zeilen erscheinen auf stderr und in `trace.log` (in einem zweiten Terminal `tail -f trace.log`). Ohne Agent: im Inspector Befehl `python`, Argumente `shared/trace_proxy.py -- python playground/server.py` eintragen |
-| C Prompt-Injection-Duell (m07-l02) | ohne Policy: `python shared/agent_client.py --server examples/m03-context-and-state/l03-multi-agent-sync/server.py --replay injection --confirm none`; mit Policy: dasselbe mit `examples/m07-security-hardening/l01-access-control-sandboxing/server.py` (Rolle viewer lehnt ab; mit `--role operator` fehlt die Bestätigung) |
-| D Ein-Befehl-Betrieb (m06-l01, m08-l01) | `docker compose -f examples/m08-observability-and-capstone/l02-capstone-integration/docker-compose.yml up --build`, Dashboard unter http://localhost:8080 |
+| C Prompt-Injection-Duell (m07-l02) | ohne Policy: `python shared/agent_client.py --server examples/m03-context-and-state/l03-multi-agent/server.py --replay injection --confirm none`; mit Policy: dasselbe mit `examples/m07-security-hardening/l01-access-control/server.py` (Rolle viewer lehnt ab; mit `--role operator` fehlt die Bestätigung) |
+| D Ein-Befehl-Betrieb (m06-l01, m08-l01) | `docker compose -f examples/m08-observability-and-capstone/l02-capstone/docker-compose.yml up --build`, Dashboard unter http://localhost:8080 |
 
 ## .env
 

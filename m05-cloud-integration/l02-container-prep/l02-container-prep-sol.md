@@ -13,7 +13,7 @@ ENV PYTHONUNBUFFERED=1 \
     TOOL_CALL_LOG=/data/tool_calls.jsonl
 ```
 
-`MCP_HOST=0.0.0.0` ist nötig, damit der Port außerhalb des Containers erreichbar ist. Rolle, Mock-API-URL und alle Secrets fehlen bewusst: sie kommen zur Laufzeit.
+`MCP_HOST=0.0.0.0` ist nötig, damit der Port außerhalb des Containers erreichbar ist. Mock-API-URL, die Rolle (ab Lab 7.1) und alle Secrets fehlen bewusst: sie kommen beim Start des Containers hinzu. `TOOL_CALL_LOG` ist vorbereitet; der Server schreibt das Protokoll ab Lab 8.1.
 
 ## Aufgabe 2: Nicht-Root-Nutzer
 
@@ -50,15 +50,15 @@ docker image inspect --format '{{json .Config.Env}}' vantra-ops-mcp:local
 docker image inspect --format '{{json .Config.Healthcheck}}' vantra-ops-mcp:local
 ```
 
-Erwartete Ausgabe (nicht auf einem Docker-Daemon aufgezeichnet, aus der Dockerfile abgeleitet):
+Ausgabe der drei `inspect`-Befehle (Docker 29.2.0; Python-Version und Prüfsumme wechseln mit dem Basis-Image):
 
 ```text
 app
-["PATH=...","PYTHONUNBUFFERED=1","PYTHONDONTWRITEBYTECODE=1","MCP_TRANSPORT=streamable-http","MCP_HOST=0.0.0.0","MCP_PORT=8000","TOOL_CALL_LOG=/data/tool_calls.jsonl",...]
-{"Test":["CMD","python","-c","import urllib.request; ..."],"Interval":15000000000,"Timeout":4000000000,"StartPeriod":10000000000,"Retries":3}
+["PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","LANG=C.UTF-8","GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305","PYTHON_VERSION=3.13.18","PYTHON_SHA256=abb0102e6d4ae027509bcb82327d9dd85515b44a3ba8ad538cfc5e9847029f68","PYTHONUNBUFFERED=1","PYTHONDONTWRITEBYTECODE=1","MCP_TRANSPORT=streamable-http","MCP_HOST=0.0.0.0","MCP_PORT=8000","TOOL_CALL_LOG=/data/tool_calls.jsonl"]
+{"Test":["CMD","python","-c","import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"],"Interval":15000000000,"Timeout":4000000000,"StartPeriod":10000000000,"Retries":3}
 ```
 
-Die Basis-Image-Variablen (`PATH`, `PYTHON_VERSION` u. a.) stehen zusätzlich in der Liste. Die Zeiten erscheinen in Nanosekunden.
+`PATH`, `LANG`, `GPG_KEY`, `PYTHON_VERSION` und `PYTHON_SHA256` stammen aus dem Basis-Image. `GPG_KEY` ist der öffentliche Fingerabdruck des Signaturschlüssels der Python-Releases, kein Geheimnis. Die Zeiten erscheinen in Nanosekunden.
 
 ## Vollständiges Dockerfile
 
@@ -96,8 +96,8 @@ CMD ["python", "server.py"]
 ## Erweiterung
 
 1. Healthcheck mit `MCP_PORT`: `CMD ["python", "-c", "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.getenv('MCP_PORT', '8000') + '/health', timeout=3)"]`
-2. `docker history --no-trunc vantra-ops-mcp:local` zeigt die `ENV`-Zeilen und Build-Befehle, aber keine Zeile mit `KEY`, `TOKEN` oder `SECRET`; die Prüfung ist bestanden, wenn der Filter nichts findet.
-3. Layer-Cache: `COPY requirements-server.txt` und `RUN pip install` bleiben bei Codeänderungen im Cache; `COPY playground/` und alles danach werden neu gebaut.
+2. `docker history --no-trunc vantra-ops-mcp:local | grep -iE 'KEY|TOKEN|SECRET'` findet genau zwei Zeilen, beide aus dem Basis-Image: `ENV GPG_KEY=7169605F…` und die `RUN`-Zeile, die Python mit `gpg --recv-keys "$GPG_KEY"` prüft (öffentlicher Schlüssel, kein Geheimnis). Die eigenen Zeilen ab `WORKDIR /app` liefern keinen Treffer; damit ist die Prüfung bestanden.
+3. Layer-Cache: Nach einer Änderung an `playground/server.py` meldet der Build `CACHED` für `WORKDIR`, `COPY requirements-server.txt`, `RUN pip install` und `RUN useradd`; `COPY playground/` und alles danach werden neu gebaut.
 
 ## Prüfung ohne Docker (Fallback)
 

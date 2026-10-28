@@ -28,4 +28,4 @@ TODO(Aufgabe 2): mindestens drei Beobachtungen zum Verhalten notieren (Tool-Ausw
 
 ## Lücken für Tag 2
 
-TODO(Aufgabe 3): Wo verhält sich der Prototyp noch nicht produktionsreif? Je Lücke eine Zeile.
+TODO(Aufgabe 4): Wo verhält sich der Prototyp noch nicht produktionsreif? Je Lücke eine Zeile.

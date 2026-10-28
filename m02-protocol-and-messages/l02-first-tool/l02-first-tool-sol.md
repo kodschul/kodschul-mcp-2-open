@@ -75,15 +75,39 @@ is_error=True
 Error executing tool get_ticket: Ticket VAN-999 nicht gefunden
 ```
 
-Der Skript-Client beendet sich bei `is_error=True` mit Exit-Code 1. Die Meldung stammt aus dem `ToolError`, ergänzt um das Präfix `Error executing tool get_ticket: `.
+Der Skript-Client beendet sich bei `is_error=True` mit Exit-Code 1. Die Meldung stammt aus dem `ToolError`, ergänzt um das Präfix `Error executing tool get_ticket: `. Zusätzlich erscheint im Terminal die Log-Zeile des Servers auf stderr: `Tool 'get_ticket' failed: 'Error executing tool get_ticket: Ticket VAN-999 nicht gefunden'`. Sie gehört nicht zur Antwort an den Client.
 
-## Aufgabe 6: Inspector
+## Aufgabe 6: tools/call als Rohnachricht
+
+```python
+send(proc, {"jsonrpc": "2.0", "id": 6, "method": "tools/call",
+            "params": {"name": "get_ticket", "arguments": {"ticket_id": "VAN-102"}, "_meta": META}})
+```
+
+Antwortzeile, umbrochen und gekürzt:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "result": {
+    "content": [{"type": "text", "text": "{\n  \"id\": \"VAN-102\",\n  \"title\": \"Login-Seite lädt nach Release 2.14 sehr langsam\",\n  \"status\": \"open\", … \"version\": 3, …}"}],
+    "isError": false,
+    "resultType": "complete",
+    "_meta": {"io.modelcontextprotocol/serverInfo": {"name": "vantra-ops", "version": ""}}
+  }
+}
+```
+
+Der Ticket-Text steht in `result.content[0].text` (JSON als Zeichenkette), `isError` ist `false`. Die Antworten der Requests 1 bis 5 aus Lab 2.1 zeigen jetzt `get_ticket` in `tools`. Vergleich: `examples/m02-protocol-and-messages/l02-first-tool/raw_requests.py`.
+
+## Aufgabe 7: Inspector
 
 ```bash
 npx @modelcontextprotocol/inspector python playground/server.py
 ```
 
-Im Tab „Tools“ steht `get_ticket` mit der Beschreibung aus dem Docstring und dem Pflichtfeld `ticket_id` (Typ `string`). Für `VAN-105` liefert der Aufruf `"assignee": null`: das Ticket ist niemandem zugewiesen. Dasselbe in der Konsole:
+Nach **Connect** und **List Tools** steht im Tab **Tools** `get_ticket` mit der Beschreibung aus dem Docstring und dem Pflichtfeld `ticket_id` (Typ `string`). Für `VAN-105` liefert **Run Tool** `"assignee": null`: das Ticket ist niemandem zugewiesen. Dasselbe in der Konsole:
 
 ```bash
 npx @modelcontextprotocol/inspector --cli python playground/server.py --method tools/call --tool-name get_ticket --tool-arg ticket_id=VAN-105
@@ -91,7 +115,7 @@ npx @modelcontextprotocol/inspector --cli python playground/server.py --method t
 
 Die Ausgabe hat die Form `{"content": [{"type": "text", "text": "…"}], "isError": false}`.
 
-## Aufgabe 7: Vergleich
+## Aufgabe 8: Vergleich
 
 Der Server stimmt mit `examples/m02-protocol-and-messages/l02-first-tool/server.py` überein, bis auf die optionale Resource. Zulässige Abweichungen: Wortlaut des Docstrings und der `instructions`.
 

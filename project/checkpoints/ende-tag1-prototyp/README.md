@@ -1,6 +1,6 @@
 # Checkpoint: Ende Tag 1 (Prototyp)
 
-Stand nach Lab 4.1: Server mit den Tools `get_ticket`, `get_deployment_log`, `update_ticket_status` (Versionsprüfung), Kontextschema (`context.py`) und angebundenem Agent-Client (`agent.py`). Entspricht `examples/m04-agent-prototype/l01-agent-client-connection/`.
+Stand nach Lab 4.1: Server mit den Tools `get_ticket`, `get_deployment_log`, `update_ticket_status` (Versionsprüfung), Kontextschema (`context.py`) und angebundenem Agent-Client (`agent.py`). Entspricht `examples/m04-agent-prototype/l01-agent-client/`.
 
 Wiedereinstieg in Tag 2:
 

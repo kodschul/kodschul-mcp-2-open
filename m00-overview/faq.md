@@ -46,7 +46,7 @@ Eine normale Exception zeigt dem Modell nur diese Meldung. `raise ToolError("…
 ## Kontext und Agent
 
 **Warum meldet das Deployment-Log „Keine ticket_id angegeben und kein Ticket im Kontext“?**
-Jeder Aufruf des Skript-Clients startet einen neuen Serverprozess mit leerem State. Ticket und Log in einer Sitzung abfragen, z. B. mit `agent_client.py --replay` (Lab 3.2).
+Jeder Aufruf des Skript-Clients startet einen neuen Serverprozess mit leerem State. Ticket und Log in einer Sitzung abfragen: im MCP Inspector (Lab 3.2), alternativ mit `agent_client.py --replay`.
 
 **Zwei Clients melden beide `ok`, einen Konflikt gibt es nicht.**
 Entweder fehlt `MOCK_API_URL` (zwei Prozesse mit getrennten Daten) oder der Server prüft `expected_version` noch nicht (Starter-Stand). Zurücksetzen: `curl -X POST localhost:8001/reset` (Lab 3.3).
@@ -60,7 +60,7 @@ Beschreibungen sind unklar oder überlappen, oder das Modell ist zu klein. Docst
 `ports` fehlt oder `MCP_HOST` steht auf `127.0.0.1`. Im Container `MCP_HOST=0.0.0.0` setzen und `-p 8000:8000` bzw. `ports: "8000:8000"` angeben (Lab 5.2, 6.1).
 
 **Wohin gehören Secrets?**
-Zur Laufzeit übergeben (`docker run -e`, Compose-Secret, Kubernetes `secretKeyRef`), nie per `ENV` im Image oder im Repo. `docker inspect` und `docker history` zeigen `ENV`-Werte (Lab 5.2).
+Zur Laufzeit übergeben (`docker run -e`, Kubernetes `secretKeyRef`), nie per `ENV` im Image oder im Repo. `docker inspect` und `docker history` zeigen `ENV`-Werte (Lab 5.2).
 
 **`update_ticket_status` liefert `policy_denied`.**
 Die Standardrolle ist `viewer` und darf nur lesen. Mit `VANTRA_ROLE=operator` starten (oder `--role operator` beim Skript- und Agent-Client). Ohne `confirmed=true` folgt danach `confirmation_required` (Lab 7.1).

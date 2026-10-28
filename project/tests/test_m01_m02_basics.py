@@ -74,8 +74,8 @@ async def test_unknown_resource_is_protocol_error():
         assert exc.value.error.code == -32602
 
 
-def _session(messages):
-    proc = subprocess.Popen([sys.executable, str(SRV_TOOL)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+def _session(messages, server=SRV_TOOL):
+    proc = subprocess.Popen([sys.executable, str(server)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
     replies = []
     try:
         for message in messages:
@@ -106,6 +106,23 @@ def test_raw_jsonrpc_without_handshake():
     assert replies[5]["error"]["code"] == -32602 and "_meta" in replies[5]["error"]["message"]
 
 
+def test_raw_jsonrpc_against_empty_server_lab_2_1():
+    """Lab 2.1 arbeitet am eigenen, leeren Server aus Lab 1.2."""
+    replies = _session([
+        {"jsonrpc": "2.0", "id": 1, "method": "server/discover", "params": {"_meta": META}},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {"_meta": META}},
+        {"jsonrpc": "2.0", "id": 3, "method": "nope/list", "params": {"_meta": META}},
+        {"jsonrpc": "2.0", "id": 4, "method": "tools/list"},
+        {"jsonrpc": "2.0", "method": "notifications/cancelled", "params": {"requestId": 99, "_meta": META}},
+        {"jsonrpc": "2.0", "id": 5, "method": "tools/list", "params": {"_meta": META}},
+    ], server=SRV_EMPTY)
+    assert [r["id"] for r in replies] == [1, 2, 3, 4, 5]
+    assert replies[0]["result"]["_meta"]["io.modelcontextprotocol/serverInfo"]["name"] == "vantra-ops"
+    assert replies[1]["result"]["tools"] == [] and replies[4]["result"]["tools"] == []
+    assert replies[2]["error"]["code"] == -32601 and replies[2]["error"]["data"] == "nope/list"
+    assert replies[3]["error"]["code"] == -32602
+
+
 def test_raw_notification_gets_no_reply_and_ids_correlate():
     replies = _session([
         {"jsonrpc": "2.0", "method": "notifications/cancelled", "params": {"requestId": 99, "_meta": META}},
@@ -124,8 +141,21 @@ def test_legacy_initialize_handshake_still_works():
     assert replies[1]["result"]["tools"][0]["name"] == "get_ticket"
 
 
+def _run_example(rel):
+    done = subprocess.run([sys.executable, str(EX / rel)], capture_output=True, text=True, timeout=60)
+    assert done.returncode == 0, done.stderr
+    return done.stdout
+
+
 def test_example_scripts_run():
-    for script in (EX / "m02-protocol-and-messages/l01-jsonrpc-live/raw_requests.py", EX / "m02-protocol-and-messages/l02-first-tool/error_cases.py"):
-        done = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, timeout=60)
-        assert done.returncode == 0, done.stderr
-    assert "is_error=True" in done.stdout and "MCPError code=-32602" in done.stdout
+    raw_21 = _run_example("m02-protocol-and-messages/l01-jsonrpc/raw_requests.py")
+    assert '"tools":[]' in raw_21 and '"code":-32601' in raw_21 and '"code":-32602' in raw_21 and "tools/call" not in raw_21
+    raw_22 = _run_example("m02-protocol-and-messages/l02-first-tool/raw_requests.py")
+    assert '"id":6,"result"' in raw_22 and '"isError":false' in raw_22 and "Field required" in raw_22
+    errors = _run_example("m02-protocol-and-messages/l02-first-tool/error_cases.py")
+    assert "is_error=True" in errors and "MCPError code=-32602" in errors
+
+
+def test_starter_m02_raw_requests_targets_own_server():
+    text = (EX.parent / "starters/m02-l01-raw-requests.py").read_text(encoding="utf-8")
+    assert 'SERVER = "playground/server.py"' in text and "tools/call" not in text

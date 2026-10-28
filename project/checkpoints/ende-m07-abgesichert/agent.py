@@ -1,8 +1,8 @@
 """Minimaler Agent-Client (Lab 4.1): MCP-Tools entdecken, an ein LLM geben, Tool-Calls ausführen.
 
 Aufruf (im Projektordner):
-  python examples/m04-agent-prototype/l01-agent-client-connection/agent.py            # echtes LLM laut .env
-  python examples/m04-agent-prototype/l01-agent-client-connection/agent.py --replay   # Replay-LLM
+  python examples/m04-agent-prototype/l01-agent-client/agent.py            # echtes LLM laut .env
+  python examples/m04-agent-prototype/l01-agent-client/agent.py --replay   # Replay-LLM
 """
 
 import asyncio

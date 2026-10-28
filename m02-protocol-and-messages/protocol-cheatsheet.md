@@ -21,6 +21,14 @@ stdio: eine JSON-Nachricht pro Zeile; stdout gehört dem Protokoll, Logs auf std
 
 Kein `initialize`. Antworten tragen `"resultType":"complete"` und `_meta["io.modelcontextprotocol/serverInfo"]`.
 
+## Fehlercodes (JSON-RPC)
+
+| Code | Bedeutung |
+| --- | --- |
+| `-32600` | ungültiger Request (z. B. Verbindung im alten Handshake-Modus) |
+| `-32601` | Methode nicht gefunden |
+| `-32602` | ungültige Parameter (fehlende Hülle, unbekannte Resource) |
+
 ## Methoden
 
 | Methode | Zweck |
@@ -48,10 +56,12 @@ Kein `initialize`. Antworten tragen `"resultType":"complete"` und `_meta["io.mod
 | Befehl | Wirkung |
 | --- | --- |
 | `python shared/script_client.py --server playground/server.py --call get_ticket '{"ticket_id": "VAN-102"}'` | Tool per Skript-Client aufrufen |
-| `python playground/raw_requests.py` | rohe JSON-RPC-Zeilen senden |
+| `python playground/raw_requests.py` | rohe JSON-RPC-Zeilen an den eigenen Server senden (Lab 2.1, ab Lab 2.2 mit `tools/call`) |
+| `python examples/m02-protocol-and-messages/l02-first-tool/raw_requests.py` | Vergleichsbeispiel: alle Rohnachrichten inkl. `tools/call` |
 | `python examples/m02-protocol-and-messages/l02-first-tool/error_cases.py` | fünf Fehlerfälle |
 | `npx @modelcontextprotocol/inspector --cli python playground/server.py --method tools/call --tool-name get_ticket --tool-arg ticket_id=VAN-102` | Aufruf per Inspector-CLI |
-| `python shared/agent_client.py --server playground/server.py --replay --trace trace.log` | Trace der Nachrichten in Datei |
+| Inspector: **Command** `python`, **Arguments** `shared/trace_proxy.py -- python playground/server.py` | Live-Trace aller Nachrichten im Terminal (stderr) |
+| `python shared/agent_client.py --server playground/server.py --replay --trace trace.log` | Trace der Nachrichten in Datei (Agent-Client, ab Modul 4) |
 
 ## Fehlerarten
 

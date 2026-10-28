@@ -115,3 +115,77 @@ spec:
     - name: mcp
       port: 8000
       targetPort: mcp
+---
+# Gemockte Ticket-/Deployment-API: gleiches Image, eigener Befehl (wie in docker-compose.yml).
+# Ohne diesen Dienst antwortet /health, Tool-Aufrufe schlagen aber fehl.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vantra-mock-api
+  labels:
+    app: vantra-mock-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vantra-mock-api
+  template:
+    metadata:
+      labels:
+        app: vantra-mock-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mock-api
+          image: vantra-ops-mcp:1.0.0
+          imagePullPolicy: IfNotPresent
+          command: ["python", "shared/mock_api/app.py"]
+          env:
+            - name: MOCK_API_HOST
+              value: 0.0.0.0
+            - name: MOCK_API_PORT
+              value: "8001"
+          ports:
+            - name: api
+              containerPort: 8001
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vantra-mock-api
+  labels:
+    app: vantra-mock-api
+spec:
+  type: ClusterIP
+  selector:
+    app: vantra-mock-api
+  ports:
+    - name: api
+      port: 8001
+      targetPort: api

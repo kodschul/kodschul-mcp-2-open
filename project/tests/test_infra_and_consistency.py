@@ -162,8 +162,8 @@ def test_server_requirements_are_pinned():
 
 
 @pytest.mark.parametrize("compose", [
-    EX / "m06-containerization-cicd/l01-build-and-run/docker-compose.yml",
-    EX / "m08-observability-and-capstone/l02-capstone-integration/docker-compose.yml",
+    EX / "m06-containerization-cicd/l01-docker/docker-compose.yml",
+    EX / "m08-observability-and-capstone/l02-capstone/docker-compose.yml",
     CHECK / "ende-m07-abgesichert/docker-compose.yml",
 ])
 def test_compose_structure(compose):
@@ -182,24 +182,37 @@ def test_compose_structure(compose):
 
 
 def test_k8s_manifest_structure():
-    docs = [d for d in yaml.safe_load_all((EX / "m06-containerization-cicd/l02-orchestration-cicd/k8s.yaml").read_text(encoding="utf-8")) if d]
-    kinds = {d["kind"]: d for d in docs}
-    assert set(kinds) == {"ConfigMap", "Deployment", "Service"}
-    pod = kinds["Deployment"]["spec"]["template"]["spec"]
+    docs = [d for d in yaml.safe_load_all((EX / "m06-containerization-cicd/l02-kubernetes-cicd/k8s.yaml").read_text(encoding="utf-8")) if d]
+    res = {(d["kind"], d["metadata"]["name"]): d for d in docs}
+    assert set(res) == {
+        ("ConfigMap", "vantra-ops-config"),
+        ("Deployment", "vantra-ops-mcp"), ("Service", "vantra-ops-mcp"),
+        ("Deployment", "vantra-mock-api"), ("Service", "vantra-mock-api"),
+    }
+    cm = res[("ConfigMap", "vantra-ops-config")]
+    dep = res[("Deployment", "vantra-ops-mcp")]
+    svc = res[("Service", "vantra-ops-mcp")]
+    pod = dep["spec"]["template"]["spec"]
     container = pod["containers"][0]
     assert pod["securityContext"]["runAsNonRoot"] is True
     assert container["securityContext"]["readOnlyRootFilesystem"] is True and container["securityContext"]["allowPrivilegeEscalation"] is False
     for probe in ("readinessProbe", "livenessProbe", "startupProbe"):
         assert container[probe]["httpGet"]["path"] == "/health"
-    assert container["envFrom"][0]["configMapRef"]["name"] == kinds["ConfigMap"]["metadata"]["name"]
+    assert container["envFrom"][0]["configMapRef"]["name"] == cm["metadata"]["name"]
     assert container["env"][0]["valueFrom"]["secretKeyRef"]["name"] == "vantra-ops-secrets"
     assert ":latest" not in container["image"] and {"requests", "limits"} <= set(container["resources"])
-    assert kinds["Service"]["spec"]["selector"] == kinds["Deployment"]["spec"]["selector"]["matchLabels"]
-    assert "kind: Secret" not in (EX / "m06-containerization-cicd/l02-orchestration-cicd/k8s.yaml").read_text(encoding="utf-8")
+    assert svc["spec"]["selector"] == dep["spec"]["selector"]["matchLabels"]
+    # MOCK_API_URL muss auf einen Service im selben Manifest zeigen
+    mock_dep = res[("Deployment", "vantra-mock-api")]
+    mock_svc = res[("Service", "vantra-mock-api")]
+    assert cm["data"]["MOCK_API_URL"] == f"http://{mock_svc['metadata']['name']}:{mock_svc['spec']['ports'][0]['port']}"
+    assert mock_svc["spec"]["selector"] == mock_dep["spec"]["selector"]["matchLabels"]
+    assert mock_dep["spec"]["template"]["spec"]["containers"][0]["command"] == ["python", "shared/mock_api/app.py"]
+    assert "kind: Secret" not in (EX / "m06-containerization-cicd/l02-kubernetes-cicd/k8s.yaml").read_text(encoding="utf-8")
 
 
 def test_pipeline_has_required_stages():
-    doc = yaml.safe_load((EX / "m06-containerization-cicd/l02-orchestration-cicd/pipeline.yml").read_text(encoding="utf-8"))
+    doc = yaml.safe_load((EX / "m06-containerization-cicd/l02-kubernetes-cicd/pipeline.yml").read_text(encoding="utf-8"))
     jobs = doc["jobs"]
     assert list(jobs) == ["build", "test", "scan", "deploy", "rollback"]
     assert {"build", "scan"} <= set(jobs["deploy"]["needs"]) and jobs["rollback"]["if"] == "failure()"
@@ -243,7 +256,7 @@ def _run_py(path, *args, **env):
 
 def test_starter_m01_stops_with_todo_message():
     done = _run_py(PROJECT / "starters/m01-l02-first-server.py")
-    assert done.returncode != 0 and "TODO(Aufgabe 2)" in done.stderr
+    assert done.returncode != 0 and "TODO(Aufgabe 3)" in done.stderr
 
 
 async def test_starter_m02_first_tool_has_no_tool_yet():
@@ -252,7 +265,7 @@ async def test_starter_m02_first_tool_has_no_tool_yet():
 
 
 async def test_starter_m03_conflict_overwrites_silently():
-    async with connect(PROJECT / "starters/m03-l03-conflict.py", PYTHONPATH=str(EX / "m03-context-and-state/l03-multi-agent-sync")) as client:
+    async with connect(PROJECT / "starters/m03-l03-conflict.py", PYTHONPATH=str(EX / "m03-context-and-state/l03-multi-agent")) as client:
         tool = next(t for t in (await client.list_tools()).tools if t.name == "update_ticket_status")
         assert "expected_version" not in tool.input_schema["properties"]
         result = await client.call_tool("update_ticket_status", {"ticket_id": "VAN-102", "status": "resolved"})
@@ -265,7 +278,7 @@ def test_starter_m03_context_fails_at_first_gap():
 
 
 def test_starter_m04_agent_fails_at_first_gap():
-    target = EX / "m04-agent-prototype/l01-agent-client-connection"
+    target = EX / "m04-agent-prototype/l01-agent-client"
     done = subprocess.run([sys.executable, "-c", f"import runpy,sys; sys.argv=['x','--replay']; runpy.run_path(r'{PROJECT / 'starters/m04-l01-agent-client.py'}', run_name='__main__')"],
                           capture_output=True, text=True, timeout=60, cwd=target)
     assert done.returncode != 0 and ("TODO(Aufgabe" in done.stderr or "NoneType" in done.stderr or "Client" in done.stderr)
@@ -291,15 +304,15 @@ def test_starter_yaml_files_parse():
 # --- Konsistenz der kumulativen Stände -------------------------------------------------------
 
 @pytest.mark.parametrize("a,b", [
-    (EX / "m03-context-and-state/l02-context-schema-implementation/context.py", EX / "m03-context-and-state/l03-multi-agent-sync/context.py"),
-    (EX / "m03-context-and-state/l03-multi-agent-sync/server.py", EX / "m04-agent-prototype/l01-agent-client-connection/server.py"),
-    (EX / "m04-agent-prototype/l01-agent-client-connection/server.py", CHECK / "ende-tag1-prototyp/server.py"),
-    (EX / "m04-agent-prototype/l01-agent-client-connection/agent.py", CHECK / "ende-tag1-prototyp/agent.py"),
-    (EX / "m07-security-hardening/l01-access-control-sandboxing/server.py", CHECK / "ende-m07-abgesichert/server.py"),
-    (EX / "m07-security-hardening/l01-access-control-sandboxing/auth.py", CHECK / "ende-m07-abgesichert/auth.py"),
-    (EX / "m08-observability-and-capstone/l01-monitoring-setup/server.py", EX / "m08-observability-and-capstone/l02-capstone-integration/server.py"),
-    (EX / "m08-observability-and-capstone/l01-monitoring-setup/logging_config.py", EX / "m08-observability-and-capstone/l02-capstone-integration/logging_config.py"),
-    (EX / "m06-containerization-cicd/l02-orchestration-cicd/k8s.yaml", EX / "m08-observability-and-capstone/l02-capstone-integration/k8s.yaml"),
+    (EX / "m03-context-and-state/l02-context-schema/context.py", EX / "m03-context-and-state/l03-multi-agent/context.py"),
+    (EX / "m03-context-and-state/l03-multi-agent/server.py", EX / "m04-agent-prototype/l01-agent-client/server.py"),
+    (EX / "m04-agent-prototype/l01-agent-client/server.py", CHECK / "ende-tag1-prototyp/server.py"),
+    (EX / "m04-agent-prototype/l01-agent-client/agent.py", CHECK / "ende-tag1-prototyp/agent.py"),
+    (EX / "m07-security-hardening/l01-access-control/server.py", CHECK / "ende-m07-abgesichert/server.py"),
+    (EX / "m07-security-hardening/l01-access-control/auth.py", CHECK / "ende-m07-abgesichert/auth.py"),
+    (EX / "m08-observability-and-capstone/l01-monitoring/server.py", EX / "m08-observability-and-capstone/l02-capstone/server.py"),
+    (EX / "m08-observability-and-capstone/l01-monitoring/logging_config.py", EX / "m08-observability-and-capstone/l02-capstone/logging_config.py"),
+    (EX / "m06-containerization-cicd/l02-kubernetes-cicd/k8s.yaml", EX / "m08-observability-and-capstone/l02-capstone/k8s.yaml"),
 ])
 def test_cumulative_states_are_identical(a, b):
     assert filecmp.cmp(a, b, shallow=False), f"{a.name} weicht von {b} ab"
@@ -307,25 +320,26 @@ def test_cumulative_states_are_identical(a, b):
 
 def test_agenda_example_files_exist():
     expected = [
-        "m01-mcp-foundations-and-setup/l02-dev-setup-first-server/server.py",
-        "m02-protocol-and-messages/l01-jsonrpc-live/raw_requests.py",
+        "m01-mcp-foundations-and-setup/l02-dev-setup/server.py",
+        "m02-protocol-and-messages/l01-jsonrpc/raw_requests.py",
+        "m02-protocol-and-messages/l02-first-tool/raw_requests.py",
         "m02-protocol-and-messages/l02-first-tool/server.py",
-        "m03-context-and-state/l02-context-schema-implementation/server.py",
-        "m03-context-and-state/l02-context-schema-implementation/context.py",
-        "m03-context-and-state/l03-multi-agent-sync/server.py",
-        "m04-agent-prototype/l01-agent-client-connection/agent.py",
-        "m04-agent-prototype/l02-end-to-end-testrun/testdialog.md",
-        "m04-agent-prototype/l02-end-to-end-testrun/testlauf.log",
+        "m03-context-and-state/l02-context-schema/server.py",
+        "m03-context-and-state/l02-context-schema/context.py",
+        "m03-context-and-state/l03-multi-agent/server.py",
+        "m04-agent-prototype/l01-agent-client/agent.py",
+        "m04-agent-prototype/l02-testrun/testdialog.md",
+        "m04-agent-prototype/l02-testrun/testlauf.log",
         "m05-cloud-integration/l02-container-prep/Dockerfile",
-        "m06-containerization-cicd/l01-build-and-run/docker-compose.yml",
-        "m06-containerization-cicd/l02-orchestration-cicd/k8s.yaml",
-        "m06-containerization-cicd/l02-orchestration-cicd/pipeline.yml",
-        "m07-security-hardening/l01-access-control-sandboxing/policy.md",
-        "m07-security-hardening/l01-access-control-sandboxing/auth.py",
+        "m06-containerization-cicd/l01-docker/docker-compose.yml",
+        "m06-containerization-cicd/l02-kubernetes-cicd/k8s.yaml",
+        "m06-containerization-cicd/l02-kubernetes-cicd/pipeline.yml",
+        "m07-security-hardening/l01-access-control/policy.md",
+        "m07-security-hardening/l01-access-control/auth.py",
         "m07-security-hardening/l03-security-review/checklist.md",
         "m07-security-hardening/l03-security-review/findings-beispiel.md",
-        "m08-observability-and-capstone/l01-monitoring-setup/logging_config.py",
-        "m08-observability-and-capstone/l02-capstone-integration/server.py",
+        "m08-observability-and-capstone/l01-monitoring/logging_config.py",
+        "m08-observability-and-capstone/l02-capstone/server.py",
     ]
     missing = [p for p in expected if not (EX / p).is_file()]
     assert not missing, missing
@@ -338,7 +352,7 @@ def test_no_secrets_in_repo_files():
 
 
 def test_script_client_lists_tools_and_calls_tool():
-    server = EX / "m03-context-and-state/l03-multi-agent-sync/server.py"
+    server = EX / "m03-context-and-state/l03-multi-agent/server.py"
     done = _run_py(PROJECT / "shared/script_client.py", "--server", str(server), "--call", "get_ticket", '{"ticket_id": "VAN-102"}')
     assert done.returncode == 0 and "Tools: get_ticket, get_deployment_log, update_ticket_status" in done.stdout
     failed = _run_py(PROJECT / "shared/script_client.py", "--server", str(server), "--call", "update_ticket_status", '{"ticket_id":"VAN-102","status":"open","expected_version":1}')

@@ -34,6 +34,8 @@
 | `healthcheck.test` | Prüfbefehl (`["CMD", ...]`), dazu `interval`, `timeout`, `retries`, `start_period` |
 | `restart: unless-stopped` | Neustart nach Prozessende |
 | `volumes: toolcalls:/data` (`:ro` lesend) | benanntes Volume |
+| `x-build: &build` / `build: *build` | YAML-Anker: Block einmal definieren, mehrfach einsetzen |
+| `${NAME:-standard}` | Umgebungsvariable der Shell, sonst `standard` |
 
 ## Agent und Client gegen den Container
 
@@ -62,7 +64,8 @@
 | `readinessProbe` | Verkehr nur an bereite Pods | HTTP-GET `/health` |
 | `livenessProbe` | Neustart bei Hänger | HTTP-GET `/health` |
 | `securityContext` | Rechte | `runAsNonRoot`, `runAsUser`, `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true` |
-| `resources` | Platzierung und Obergrenze | `requests`, `limits` |
+| `resources` | Platzierung und Obergrenze | `requests`, `limits`; `100m` = 0,1 CPU-Kern, `128Mi` ≈ 134 MB |
+| Label / `selector` | Service und Deployment finden ihre Pods | `app: vantra-ops-mcp` an Pod-Template und Selector gleich |
 
 ## kubectl und Validierung
 
@@ -79,12 +82,23 @@
 | `kubectl create secret generic vantra-ops-secrets --from-literal=MOCK_API_TOKEN=<wert>` | Secret anlegen |
 | `kubectl delete -f playground/k8s.yaml` | Ressourcen entfernen |
 
+## Pipeline-Begriffe
+
+| Begriff | Bedeutung |
+| --- | --- |
+| Workflow | YAML-Datei der Pipeline, `on:` = Auslöser |
+| Job | Stufe auf eigenem Runner (`runs-on`) |
+| Step | `run:` (Shell-Befehl) oder `uses:` (Action) |
+| `needs` | Reihenfolge zwischen Jobs |
+| `environment` | Zielumgebung mit Schutzregel (Freigabe) |
+| Registry | Ablage für Images (z. B. `ghcr.io`) |
+
 ## Pipeline-Stufen
 
 | Stufe | Inhalt | Kennzeichen in der Datei |
 | --- | --- | --- |
 | build | Image mit Commit-SHA taggen | `${GITHUB_SHA::12}` |
 | test | `pytest -q` | `actions/setup-python` |
-| scan | `pip-audit`, Trivy, Policy-Test | `needs: [build, test]` |
+| scan | `pip-audit`, Trivy (nur bekannte Schwachstellen; Tests auf Tools und Rechte ab Lab 7.1) | `needs: [build, test]` |
 | deploy | Freigabe, `kubectl set image`, `rollout status` | `environment: production`, `needs: [build, scan]` |
 | rollback | `kubectl rollout undo` | `if: failure()` |

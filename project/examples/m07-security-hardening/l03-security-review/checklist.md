@@ -12,7 +12,7 @@ Prüfgegenstände: Dockerfile, Zugriffsrichtlinie (`policy.md`), Server-Konfigur
 | - | --------- | -------- | -------------- |
 | A1 | Basis-Image mit fester Version statt `latest`? | | |
 | A2 | Läuft der Prozess als Nicht-Root-Nutzer (`USER`)? | | |
-| A3 | Stehen Secrets (Schlüssel, Tokens, Passwörter) im Image oder in `ENV`? | | |
+| A3 | Keine Secrets (Schlüssel, Tokens, Passwörter) im Image oder in `ENV`? | | |
 | A4 | Werden nur benötigte Dateien kopiert (kein `COPY . .`, `.dockerignore` vorhanden)? | | |
 | A5 | Sind Abhängigkeiten auf feste Versionen gepinnt? | | |
 | A6 | Gibt es einen `HEALTHCHECK`? | | |
@@ -38,6 +38,6 @@ Prüfgegenstände: Dockerfile, Zugriffsrichtlinie (`policy.md`), Server-Konfigur
 | - | --------- | -------- | -------------- |
 | C1 | Eingaben der Tools validiert (Format, Grenzen)? | | |
 | C2 | Tool-Ergebnisse als Daten behandelt, nie als Anweisung? | | |
-| C3 | Konfiguration über Umgebung/Secret-Store, nicht im Code? | | |
+| C3 | Konfiguration zur Laufzeit über Umgebung/Secret-Store, nicht im Code oder fest im Image (`ENV` im Dockerfile)? | | |
 | C4 | Protokolle enthalten keine Secrets und keine Ticket-Inhalte? | | |
 | C5 | Rollback-Weg für fehlerhafte Releases vorhanden? | | |

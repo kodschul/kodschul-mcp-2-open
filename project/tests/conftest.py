@@ -15,15 +15,15 @@ PROJECT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT))
 
 EX = PROJECT / "examples"
-SRV_EMPTY = EX / "m01-mcp-foundations-and-setup/l02-dev-setup-first-server/server.py"
+SRV_EMPTY = EX / "m01-mcp-foundations-and-setup/l02-dev-setup/server.py"
 SRV_TOOL = EX / "m02-protocol-and-messages/l02-first-tool/server.py"
-SRV_CONTEXT = EX / "m03-context-and-state/l02-context-schema-implementation/server.py"
-SRV_CONFLICT = EX / "m03-context-and-state/l03-multi-agent-sync/server.py"
-SRV_AGENT = EX / "m04-agent-prototype/l01-agent-client-connection/server.py"
+SRV_CONTEXT = EX / "m03-context-and-state/l02-context-schema/server.py"
+SRV_CONFLICT = EX / "m03-context-and-state/l03-multi-agent/server.py"
+SRV_AGENT = EX / "m04-agent-prototype/l01-agent-client/server.py"
 SRV_CONTAINER = EX / "m05-cloud-integration/l02-container-prep/server.py"
-SRV_SECURE = EX / "m07-security-hardening/l01-access-control-sandboxing/server.py"
-SRV_LOGGING = EX / "m08-observability-and-capstone/l01-monitoring-setup/server.py"
-SRV_CAPSTONE = EX / "m08-observability-and-capstone/l02-capstone-integration/server.py"
+SRV_SECURE = EX / "m07-security-hardening/l01-access-control/server.py"
+SRV_LOGGING = EX / "m08-observability-and-capstone/l01-monitoring/server.py"
+SRV_CAPSTONE = EX / "m08-observability-and-capstone/l02-capstone/server.py"
 
 
 @asynccontextmanager

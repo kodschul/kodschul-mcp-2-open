@@ -1,0 +1,71 @@
+# Showcase D: ein Befehl startet MCP-Server, Mock-API und Dashboard.
+# Aus dem Projektordner (output/project):
+#   docker compose -f examples/m06-containerization-cicd/l01-docker/docker-compose.yml up --build
+# Anderer Server-Stand: APP_DIR=examples/m05-cloud-integration/l02-container-prep docker compose -f ... up --build
+# ${APP_DIR:-playground} = Wert der Umgebungsvariable APP_DIR, ohne Variable "playground".
+
+name: vantra-ops
+
+# x-…: eigener Block ohne Wirkung für Compose; &build gibt ihm einen Namen (YAML-Anker),
+# *build an jedem Dienst setzt genau diesen Block ein (statt ihn dreimal abzuschreiben).
+x-build: &build
+  context: ../../..          # Projektordner
+  dockerfile: examples/m05-cloud-integration/l02-container-prep/Dockerfile
+  args:
+    APP_DIR: ${APP_DIR:-playground}
+
+services:
+  mcp-server:
+    build: *build
+    image: vantra-ops-mcp:local
+    environment:
+      MCP_TRANSPORT: streamable-http
+      MCP_PORT: "8000"
+      MOCK_API_URL: http://mock-api:8001
+      TOOL_CALL_LOG: /data/tool_calls.jsonl
+      VANTRA_ROLE: ${VANTRA_ROLE:-viewer}
+    ports:
+      - "${MCP_PORT:-8000}:8000"
+    volumes:
+      - toolcalls:/data
+    depends_on:
+      mock-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mock-api:
+    build: *build
+    image: vantra-ops-mcp:local
+    command: ["python", "shared/mock_api/app.py"]
+    environment:
+      MOCK_API_HOST: 0.0.0.0
+      MOCK_API_PORT: "8001"
+    ports:
+      - "${MOCK_API_PORT:-8001}:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 10s
+      timeout: 4s
+      retries: 3
+      start_period: 5s
+
+  dashboard:
+    build: *build
+    image: vantra-ops-mcp:local
+    command: ["python", "shared/dashboard/server.py"]
+    environment:
+      DASHBOARD_HOST: 0.0.0.0
+      DASHBOARD_PORT: "8080"
+      TOOL_CALL_LOG: /data/tool_calls.jsonl
+    ports:
+      - "${DASHBOARD_PORT:-8080}:8080"
+    volumes:
+      - toolcalls:/data:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"]
+      interval: 10s
+      timeout: 4s
+      retries: 3
+
+volumes:
+  toolcalls:

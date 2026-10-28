@@ -17,6 +17,7 @@ TODO(Aufgabe 1): Jede Zeile mit ✔ (erfüllt), ✘ (nicht erfüllt) oder ? (nic
 | A5 | Abhängigkeiten gepinnt? | | |
 | A6 | `HEALTHCHECK` vorhanden? | | |
 | A7 | Nur benötigte Ports und Pakete? | | |
+| A8 | Dateirechte restriktiv (kein `chmod 777`)? | | |
 | B1 | Rollen nach Least Privilege? | | |
 | B2 | Deny by default? | | |
 | B3 | Rolle aus vertrauenswürdiger Quelle? | | |
@@ -24,6 +25,12 @@ TODO(Aufgabe 1): Jede Zeile mit ✔ (erfüllt), ✘ (nicht erfüllt) oder ? (nic
 | B5 | Durchsetzung im Server? | | |
 | B6 | Jeder Aufruf protokolliert? | | |
 | B7 | Eigene Identität je Client? | | |
+| B8 | Erkennung und Reaktion auf Auffälligkeiten beschrieben? | | |
+| C1 | Eingaben der Tools validiert (Format, Grenzen)? | | |
+| C2 | Tool-Ergebnisse als Daten behandelt, nie als Anweisung? | | |
+| C3 | Konfiguration zur Laufzeit über Umgebung/Secret-Store, nicht im Code oder fest im Image? | | |
+| C4 | Protokolle enthalten keine Secrets und keine Ticket-Inhalte? | | |
+| C5 | Rollback-Weg für fehlerhafte Releases vorhanden? | | |
 
 ## Befunde
 

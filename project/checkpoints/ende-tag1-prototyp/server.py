@@ -25,7 +25,10 @@ WRITE = ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent
 
 
 def error_result(code: str, message: str, **details) -> CallToolResult:
-    """Strukturierter Tool-Fehler: Code, Meldung und Details als JSON (is_error=True)."""
+    """Strukturierter Tool-Fehler: Code, Meldung und Details als JSON (is_error=True).
+
+    Anders als ToolError (nur Text) trägt das Ergebnis maschinenlesbare Felder wie current_version.
+    """
     payload = {"error": code, "message": message, **details}
     return CallToolResult(
         content=[TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))],
@@ -94,8 +97,8 @@ def ticket_resource(ticket_id: str) -> dict:
 
 @mcp.resource("context://session", mime_type="application/json")
 def session_context() -> dict:
-    """Sichtbarer Ausschnitt des Session-Kontexts und das Schema dahinter."""
-    return {"schema": SESSION_SCHEMA, "aktuell": session.to_llm_view()}
+    """Ansicht des Session-Kontexts für Menschen und Hosts (der Agent-Client lädt sie nicht ins LLM)."""
+    return {"schema": SESSION_SCHEMA, "aktuell": session.to_view()}
 
 
 if __name__ == "__main__":

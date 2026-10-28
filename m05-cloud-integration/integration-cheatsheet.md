@@ -4,25 +4,25 @@
 
 | Muster | Aufbau | Transport | Wann |
 | --- | --- | --- | --- |
-| Sidecar | Server neben dem Agenten | stdio / localhost | strenge Isolation je Agent |
-| Zentraler Service | ein Deployment mit Service | Streamable HTTP | mehrere interne Agenten, ein Betriebspunkt |
-| Edge | Gateway oder Server am Rand | Streamable HTTP, TLS | externe Clients |
+| Sidecar | Server neben genau einem Agenten (Beiwagen) | stdio / localhost | strenge Isolation je Agent |
+| Zentraler Service | ein Server mit festem Namen für viele Agenten | Streamable HTTP | mehrere interne Agenten, ein Betriebspunkt |
+| Edge | Gateway am Netzwerkrand prüft und reicht weiter | Streamable HTTP, TLS | externe Clients |
 
 ## Adressen
 
 | Umgebung | URL |
 | --- | --- |
 | lokal / Portfreigabe | `http://localhost:8000/mcp` |
-| Docker Compose | `http://mcp-server:8000/mcp` |
-| Kubernetes (gleicher Namespace) | `http://vantra-ops-mcp:8000/mcp` |
-| Kubernetes (anderer Namespace) | `http://vantra-ops-mcp.<namespace>.svc.cluster.local:8000/mcp` |
+| Docker Compose (Lab 6.1) | `http://mcp-server:8000/mcp` |
+| Kubernetes, gleicher Namespace (Lab 6.2) | `http://vantra-ops-mcp:8000/mcp` |
+| Kubernetes, anderer Namespace (Lab 6.2) | `http://vantra-ops-mcp.<namespace>.svc.cluster.local:8000/mcp` |
 
 ## Versionen
 
 | Ebene | Wert / Befehl |
 | --- | --- |
 | Image | fester Tag, z. B. `vantra-ops-mcp:1.0.0` |
-| Revisionen | `kubectl rollout history deployment/vantra-ops-mcp` |
+| Revisionen | `kubectl rollout history deployment/vantra-ops-mcp` (Lab 6.2) |
 | Protokoll | `2026-07-28` (`server/discover` → `supportedVersions`) |
 
 ## Server-Konfiguration (Umgebungsvariablen)
@@ -33,8 +33,8 @@
 | `MCP_HOST` | Bindung des HTTP-Servers | `0.0.0.0` |
 | `MCP_PORT` | Port des HTTP-Servers | `8000` |
 | `MOCK_API_URL` | HTTP-Mock-API statt prozesslokaler Daten | leer |
-| `TOOL_CALL_LOG` | Pfad des Tool-Call-Protokolls | `logs/tool_calls.jsonl` |
-| `VANTRA_ROLE` | Rolle des Servers (ab Modul 7) | `viewer` |
+| `TOOL_CALL_LOG` | Pfad des Tool-Call-Protokolls (vorbereitet, wirkt ab Lab 8.1) | `logs/tool_calls.jsonl` |
+| `VANTRA_ROLE` | Rolle des Servers (vorbereitet, wirkt ab Lab 7.1) | `viewer` |
 | `MCP_SERVER_URL` | Server-Adresse des Agent-Clients | leer |
 
 ## Dockerfile-Bausteine
@@ -60,6 +60,7 @@
 | `docker image inspect --format '{{json .Config.Env}}' vantra-ops-mcp:local` | Umgebung im Image |
 | `docker image inspect --format '{{json .Config.Healthcheck}}' vantra-ops-mcp:local` | Healthcheck im Image |
 | `docker history --no-trunc vantra-ops-mcp:local` | Layer und Befehle (Secrets-Suche) |
+| `docker run -d -p 8000:8000 -e MOCK_API_TOKEN vantra-ops-mcp:local` | Secret beim Start aus der Shell übergeben |
 | `MCP_TRANSPORT=streamable-http MCP_HOST=127.0.0.1 python playground/server.py` | lokale Probe ohne Docker |
 | `curl -i http://127.0.0.1:8000/health` | Health-Pfad, erwartet `200` und `{"status":"ok"}` |
 
@@ -68,8 +69,8 @@
 | Wert | Ort |
 | --- | --- |
 | Port, Transport | `ENV` im Dockerfile |
-| URL, Rolle, Log-Stufe je Umgebung | Compose `environment`, Kubernetes ConfigMap |
-| Tokens, Schlüssel | Laufzeit: `-e`, Compose-Secret, Kubernetes Secret |
+| URL, Log-Stufe, später Rolle je Umgebung | `docker run -e`, Compose `environment` (Lab 6.1), Kubernetes ConfigMap (Lab 6.2) |
+| Tokens, Schlüssel | beim Start: `docker run -e NAME`, Kubernetes Secret (Lab 6.2) |
 | Daten, die bleiben | Volume nach `/data` |
 
 ## Health-Mechanismen
@@ -77,8 +78,8 @@
 | Ebene | Mechanismus | Folge bei Ausfall |
 | --- | --- | --- |
 | Docker | `HEALTHCHECK` | Status `unhealthy`, kein Neustart |
-| Compose | `healthcheck`, `depends_on: condition: service_healthy` | Startreihenfolge |
-| Kubernetes | `startupProbe`, `readinessProbe`, `livenessProbe` auf `/health` | kein Verkehr bzw. Neustart |
+| Compose (Lab 6.1) | `healthcheck`, `depends_on: condition: service_healthy` | Startreihenfolge |
+| Kubernetes (Lab 6.2) | `startupProbe`, `readinessProbe`, `livenessProbe` auf `/health` | kein Verkehr bzw. Neustart |
 
 ## Typische Fehler
 

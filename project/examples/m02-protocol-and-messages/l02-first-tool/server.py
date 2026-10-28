@@ -3,6 +3,7 @@
 import sys
 from pathlib import Path
 
+# Sucht den Projektordner (den mit shared/), damit "import shared…" funktioniert – nicht ändern.
 sys.path.insert(0, next(str(p) for p in Path(__file__).resolve().parents if (p / "shared").is_dir()))
 
 from mcp.server import MCPServer

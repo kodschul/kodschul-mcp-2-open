@@ -68,7 +68,8 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
       - run: |
-          # Tool-Beschreibungen gegen die freigegebene Liste prüfen (Tool-Spoofing)
+          # Policy-Tests: freigegebene Tools und Rollen laut policy.md, Ablehnung von Schreibaufrufen
+          pip install -r requirements.txt
           pytest -q tests/test_m07_policy.py
 
   deploy:

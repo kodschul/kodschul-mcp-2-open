@@ -21,6 +21,7 @@ from shared.agent_client import SYSTEM_PROMPT, load_env, make_llm
 from shared.replay_llm import SCENARIOS
 
 SERVER = str(Path(__file__).resolve().parent / "server.py")
+MAX_STEPS = 6  # schützt vor einem Modell, das endlos weitere Tools aufruft
 
 
 def to_openai_tool(tool) -> dict:
@@ -37,6 +38,8 @@ async def main() -> None:
 
     # TODO(Aufgabe 1): StdioServerParameters für SERVER anlegen (command=sys.executable, args=[SERVER])
     params = None
+    if params is None:
+        raise SystemExit("TODO(Aufgabe 1): Serverparameter fehlen, der Agent kann den Server nicht starten")
     async with Client(params) as client:
         tools = (await client.list_tools()).tools
         llm_tools = [to_openai_tool(t) for t in tools]
@@ -51,12 +54,14 @@ async def main() -> None:
             print(f"\nNutzer: {prompt}")
             messages.append({"role": "user", "content": prompt})
 
-            while True:
+            for _ in range(MAX_STEPS):  # Tool-Schleife mit Obergrenze: höchstens MAX_STEPS Modellaufrufe je Eingabe
                 reply = llm.chat(messages, llm_tools)
                 if not reply["tool_calls"]:
                     messages.append({"role": "assistant", "content": reply["content"]})
                     print(f"Agent: {reply['content']}")
                     break
+                # Das Modell merkt sich nichts zwischen zwei Aufrufen: Sein eigener Tool-Wunsch muss in den Verlauf,
+                # sonst kann es die folgende tool-Nachricht (gleiche tool_call_id) keinem Wunsch zuordnen.
                 messages.append({
                     "role": "assistant",
                     "content": reply["content"],
@@ -72,9 +77,16 @@ async def main() -> None:
                     result = None
                     text = ""
                     messages.append({"role": "tool", "tool_call_id": call["id"], "content": ("FEHLER: " if result and result.is_error else "") + text})
+            else:
+                print("Agent: Abbruch nach zu vielen Tool-Schritten.")
             if prompts and not queue:
                 break
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as exc:  # z. B. Ollama nicht erreichbar oder Modell nicht geladen
+        print(f"Fehler: {type(exc).__name__}: {exc}", file=sys.stderr)
+        print("Hinweis: 'ollama list' prüfen, Werte in .env prüfen oder mit --replay starten.", file=sys.stderr)
+        sys.exit(1)
