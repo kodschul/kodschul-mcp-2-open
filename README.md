@@ -67,6 +67,6 @@ Alle Projektdateien liegen in [`project/`](project/), gegliedert in `examples/` 
 
 <div align="center">
 
-<sub>© Kodschul GmbH · <a href="https://www.kodschul.com">kodschul.com</a> · Kompetenz aufbauen – von der sicheren KI-Anwendung bis zur modernen IT-Basis</sub>
+<sub>© Nextise GmbH · <a href="https://www.kodschul.com">kodschul.com</a> · Kompetenz aufbauen – von der sicheren KI-Anwendung bis zur modernen IT-Basis</sub>
 
 </div>
